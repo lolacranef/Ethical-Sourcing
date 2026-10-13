@@ -1,6 +1,22 @@
-# Ethical Sourcing Tracer
+# Zenith · Ethical Sourcing
 
 Evidence-first supply-chain research workspace. The repository's full product requirements are preserved in [CONCEPT.md](CONCEPT.md).
+
+**Live demo:** https://lolacranef.github.io/Zenith-Ethical-Sourcing-/
+
+The demo is the static frontend only. It uses fictional review leads plus real UN Comtrade mirror statistics in the Product watch tab; the backend investigation features run locally.
+
+## Publishing the demo
+
+GitHub Pages serves the `docs/` folder on `main`. To refresh the trade data and republish:
+
+```sh
+cd frontend
+npm run data:comtrade   # fetches products missing from src/data/comtrade-mirror.json; add --refresh to refetch all
+npm run build:pages     # builds into ../docs
+```
+
+Then commit and push `docs/` and `frontend/src/data/`.
 
 ## Local setup
 
