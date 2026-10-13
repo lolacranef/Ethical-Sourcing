@@ -103,7 +103,7 @@ function SeverityPill({ severity }: { severity: Signal["severity"] }) {
   return <span className={`severity-pill ${severity.toLowerCase()}`}><i />{severity}</span>;
 }
 
-function MeridianMark() {
+function ZenithMark() {
   return <svg className="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
     <circle cx="32" cy="32" r="30" fill="#e3c27a" stroke="#142624" strokeWidth="1.6" />
     <circle cx="32" cy="32" r="26.4" fill="none" stroke="#203b38" strokeWidth="2.4" strokeDasharray=".7 2.06" />
@@ -239,7 +239,7 @@ export default function App() {
   return (
     <main className="desk-shell">
       <header className="masthead" id="top">
-        <a className="brand" href="#top" aria-label="Meridian home"><MeridianMark /><span className="brand-copy"><b>Meridian</b><small>GLOBAL TRADE OBSERVATORY</small></span></a>
+        <a className="brand" href="#top" aria-label="Zenith home"><ZenithMark /><span className="brand-copy"><b>Zenith</b><small>GLOBAL TRADE OBSERVATORY</small></span></a>
         <div className="workspace-tag"><span className="workspace-dot" />ANALYST WORKSPACE</div>
       </header>
 
@@ -248,7 +248,7 @@ export default function App() {
       {activeTab === "overview" && <section className="welcome-panel" aria-labelledby="welcome-heading">
           <div className="welcome-copy">
             <p className="welcome-kicker"><Compass size={14} /> ANALYST BRIEFING <span>·</span> GLOBAL TRADE SCREENING</p>
-            <h2 id="welcome-heading">Welcome to <em>Meridian.</em></h2>
+            <h2 id="welcome-heading">Welcome to <em>Zenith.</em></h2>
             <p>Start with public trade patterns, follow a signal to its evidence, and decide what merits a closer look. Every lead stays in human hands.</p>
             <div className="welcome-actions"><button type="button" onClick={() => setActiveTab("signals")}>Review signals <ArrowRight size={15} /></button><button type="button" className="welcome-secondary" onClick={() => document.getElementById("zone-map")?.scrollIntoView({ behavior: "smooth", block: "center" })}>Explore the map <MapPin size={14} /></button></div>
           </div>
@@ -282,7 +282,7 @@ export default function App() {
 
       {activeTab === "sources" && <section className="tab-page source-page"><div className="section-title-row"><div><p className="eyebrow">04 <span>/</span> DATA &amp; METHOD</p><h2>Know what each layer can support</h2></div><span className="data-chip">GLOBAL FRAME · LOCAL RULES</span></div><div className="coverage-note"><Globe2 size={19} /><div><b>Global trade comparisons, uneven zone-level coverage</b><p>ITC Trade Map supports broad reporter, partner, product, and period comparisons across many markets. It does not identify individual FTZ lots. Census FTZ statistics and USITC DataWeb are U.S.-specific; other jurisdictions require their own official data sources, definitions, and access checks.</p></div></div><div className="source-register">{sourceLinks.map((source) => <a className="register-item" key={source.label} href={source.href} target="_blank" rel="noreferrer"><span className="register-check"><Check size={13} /></span><span className="register-name">{source.label}<small>{source.status} · official external source</small></span><ExternalLink size={14} /></a>)}<div className="register-item future-source"><span className="register-pending"><Clock3 size={13} /></span><span className="register-name">Sayari<small>Planned provider · access and API not configured</small></span><span className="pending-tag">NOT CONNECTED</span></div></div><div className="method-grid"><article><span className="method-number">01</span><h3>Public screening</h3><p>Use public aggregate trade data for product, partner, reporter, and time comparisons where fields are available. Show source, release date, unit, and jurisdiction coverage on each view.</p></article><article><span className="method-number">02</span><h3>Review signal</h3><p>Explain why a pattern was surfaced, what benign explanations may apply, and what evidence is missing. Scores order analyst attention only.</p></article><article><span className="method-number">03</span><h3>Confirm locally</h3><p>Zone records, FTZ definitions, and access rights differ by jurisdiction. Case-level admission, inventory, processing, withdrawal, and entry records require local authority and authorization.</p></article></div><div className="scope-note"><Gauge size={16} /><p><b>Evidence discipline</b> Public trade changes can prioritize review. Confirming movement, inventory discrepancies, origin, trafficking, money laundering, or labor abuse requires relevant records and independent corroboration. The system makes no automated findings.</p><a href="https://www.ecfr.gov/current/title-19/chapter-I/part-146" target="_blank" rel="noreferrer">U.S. FTZ recordkeeping rule <ArrowUpRight size={13} /></a></div></section>}
 
-      <footer className="desk-footer"><span>Meridian <i>·</i> Global trade observatory</span><span>Illustrative interface <i>·</i> fictional data <i>·</i> human review only</span></footer>
+      <footer className="desk-footer"><span>Zenith <i>·</i> Global trade observatory</span><span>Illustrative interface <i>·</i> fictional data <i>·</i> human review only</span></footer>
     </main>
   );
 }
