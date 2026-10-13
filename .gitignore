@@ -7,3 +7,4 @@ node_modules/
 dist/
 *.py[cod]
 *.tsbuildinfo
+!frontend/src/data/

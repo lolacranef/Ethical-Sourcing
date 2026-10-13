@@ -1,0 +1,267 @@
+{
+  "generatedAt": "2026-10-13T03:25:00.942Z",
+  "source": "UN Comtrade (comtradeapi.un.org, public preview)",
+  "reporter": "United States",
+  "products": {
+    "solar": {
+      "cmdCode": "854143",
+      "partner": {
+        "code": 360,
+        "name": "Indonesia"
+      },
+      "supplierRankYear": "2025",
+      "months": [
+        {
+          "period": "2024-08",
+          "reported": 22232529,
+          "mirror": 43067629.71
+        },
+        {
+          "period": "2024-09",
+          "reported": 40875836,
+          "mirror": 49728844.82
+        },
+        {
+          "period": "2024-10",
+          "reported": 52287383,
+          "mirror": 33315421.77
+        },
+        {
+          "period": "2024-11",
+          "reported": 46636665,
+          "mirror": 42065774.97
+        },
+        {
+          "period": "2024-12",
+          "reported": 42177302,
+          "mirror": 37642322.25
+        },
+        {
+          "period": "2025-01",
+          "reported": 54886937,
+          "mirror": 58487802.56
+        },
+        {
+          "period": "2025-02",
+          "reported": 67974970,
+          "mirror": 66137743.128
+        },
+        {
+          "period": "2025-03",
+          "reported": 134356785,
+          "mirror": 96865820.787
+        },
+        {
+          "period": "2025-04",
+          "reported": 157323831,
+          "mirror": 92735034.39
+        },
+        {
+          "period": "2025-05",
+          "reported": 218691041,
+          "mirror": 118861410.52
+        },
+        {
+          "period": "2025-06",
+          "reported": 282346608,
+          "mirror": 77977132.17
+        },
+        {
+          "period": "2025-07",
+          "reported": 246146290,
+          "mirror": 93256751.66
+        },
+        {
+          "period": "2025-08",
+          "reported": 141773930,
+          "mirror": 123446098.67
+        },
+        {
+          "period": "2025-09",
+          "reported": 203861351,
+          "mirror": 119060823.82
+        },
+        {
+          "period": "2025-10",
+          "reported": 217210739,
+          "mirror": 210728252.29
+        },
+        {
+          "period": "2025-11",
+          "reported": 408342935,
+          "mirror": 122347378.52
+        },
+        {
+          "period": "2025-12",
+          "reported": 337937650,
+          "mirror": 77224042.34
+        },
+        {
+          "period": "2026-01",
+          "reported": 160190867,
+          "mirror": 86899219.705
+        },
+        {
+          "period": "2026-02",
+          "reported": 139039866,
+          "mirror": 84800874.05
+        },
+        {
+          "period": "2026-03",
+          "reported": 9844355,
+          "mirror": 74422343.23
+        },
+        {
+          "period": "2026-04",
+          "reported": 6964554,
+          "mirror": 132991356.79
+        },
+        {
+          "period": "2026-05",
+          "reported": 7515609,
+          "mirror": 126463316.19
+        },
+        {
+          "period": "2026-06",
+          "reported": 7595877,
+          "mirror": 135709433.51
+        },
+        {
+          "period": "2026-07",
+          "reported": 6271154,
+          "mirror": 161102498.37
+        }
+      ]
+    },
+    "aluminum": {
+      "cmdCode": "7601",
+      "partner": {
+        "code": 124,
+        "name": "Canada"
+      },
+      "supplierRankYear": "2025",
+      "months": [
+        {
+          "period": "2024-08",
+          "reported": 584952985,
+          "mirror": 584027886.005
+        },
+        {
+          "period": "2024-09",
+          "reported": 702559798,
+          "mirror": 700007777.714
+        },
+        {
+          "period": "2024-10",
+          "reported": 702388764,
+          "mirror": 696989690.821
+        },
+        {
+          "period": "2024-11",
+          "reported": 609263690,
+          "mirror": 607017107.677
+        },
+        {
+          "period": "2024-12",
+          "reported": 667781020,
+          "mirror": 664417658.785
+        },
+        {
+          "period": "2025-01",
+          "reported": 742120642,
+          "mirror": 738393128.56
+        },
+        {
+          "period": "2025-02",
+          "reported": 661472817,
+          "mirror": 654586706.951
+        },
+        {
+          "period": "2025-03",
+          "reported": 814549480,
+          "mirror": 806870830.482
+        },
+        {
+          "period": "2025-04",
+          "reported": 559334577,
+          "mirror": 549332720.263
+        },
+        {
+          "period": "2025-05",
+          "reported": 470867769,
+          "mirror": 462336886.821
+        },
+        {
+          "period": "2025-06",
+          "reported": 343395890,
+          "mirror": 335216439.624
+        },
+        {
+          "period": "2025-07",
+          "reported": 327006151,
+          "mirror": 319370856.433
+        },
+        {
+          "period": "2025-08",
+          "reported": 343738857,
+          "mirror": 338756546.376
+        },
+        {
+          "period": "2025-09",
+          "reported": 406420290,
+          "mirror": 401632201.918
+        },
+        {
+          "period": "2025-10",
+          "reported": 450965576,
+          "mirror": 447468216.262
+        },
+        {
+          "period": "2025-11",
+          "reported": 427079466,
+          "mirror": 410604312.74
+        },
+        {
+          "period": "2025-12",
+          "reported": 538759456,
+          "mirror": 512030893.196
+        },
+        {
+          "period": "2026-01",
+          "reported": 510553595,
+          "mirror": 432086510.763
+        },
+        {
+          "period": "2026-02",
+          "reported": 579934306,
+          "mirror": 564076762.791
+        },
+        {
+          "period": "2026-03",
+          "reported": 656747973,
+          "mirror": 623210164.109
+        },
+        {
+          "period": "2026-04",
+          "reported": 610350391,
+          "mirror": 569676442.29
+        },
+        {
+          "period": "2026-05",
+          "reported": 544410535,
+          "mirror": 519951025.855
+        },
+        {
+          "period": "2026-06",
+          "reported": 539739118,
+          "mirror": 519888360.772
+        },
+        {
+          "period": "2026-07",
+          "reported": 593140786,
+          "mirror": 564152104.887
+        }
+      ]
+    }
+  }
+}
