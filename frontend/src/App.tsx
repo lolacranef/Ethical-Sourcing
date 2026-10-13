@@ -103,6 +103,22 @@ function SeverityPill({ severity }: { severity: Signal["severity"] }) {
   return <span className={`severity-pill ${severity.toLowerCase()}`}><i />{severity}</span>;
 }
 
+function MeridianMark() {
+  return <svg className="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
+    <circle cx="32" cy="32" r="30" fill="#e3c27a" stroke="#142624" strokeWidth="1.6" />
+    <circle cx="32" cy="32" r="26.4" fill="none" stroke="#203b38" strokeWidth="2.4" strokeDasharray=".7 2.06" />
+    <circle cx="32" cy="32" r="19" fill="#203b38" />
+    <g fill="none" stroke="#e9d7a8" strokeWidth=".9" opacity=".75">
+      <ellipse cx="32" cy="32" rx="7" ry="19" />
+      <ellipse cx="32" cy="32" rx="13.5" ry="19" />
+      <path d="M13 32h38M15.6 22.5h32.8M15.6 41.5h32.8" />
+    </g>
+    <path d="M32 3.5v57" stroke="#bd5d3d" strokeWidth="2.6" />
+    <path d="M32 2.5l2.3 6.2 6.2 2.3-6.2 2.3L32 19.5l-2.3-6.2-6.2-2.3 6.2-2.3z" fill="#bd5d3d" stroke="#142624" strokeWidth="1" strokeLinejoin="round" />
+    <circle cx="32" cy="32" r="3" fill="#e3c27a" stroke="#142624" strokeWidth="1" />
+  </svg>;
+}
+
 function ScoreBar({ score }: { score: number }) {
   return <div className="score-line"><span className="score-track"><i style={{ width: `${score}%` }} /></span><b>{score}</b></div>;
 }
@@ -112,7 +128,7 @@ function TradePulseChart() {
   return <div className="chart-frame">
     <div className="chart-axis-labels"><span>HIGHER INDEX</span><span>ILLUSTRATIVE INDEX · NOT DOLLARS</span></div>
     <svg className="pulse-chart" viewBox="0 0 560 120" role="img" aria-label="Fictional monthly trade index trend, included only to demonstrate chart layout">
-      <defs><linearGradient id="pulseFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#3d8c83" stopOpacity=".25"/><stop offset="100%" stopColor="#3d8c83" stopOpacity="0"/></linearGradient></defs>
+      <defs><linearGradient id="pulseFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#3e7b73" stopOpacity=".25"/><stop offset="100%" stopColor="#3e7b73" stopOpacity="0"/></linearGradient></defs>
       {[25, 55, 85, 115].map((y) => <line key={y} x1="0" x2="560" y1={y} y2={y} className="chart-gridline" />)}
       <polygon points={`0,120 ${points} 540,120`} fill="url(#pulseFill)" />
       <polyline points={points} className="chart-line" />
@@ -155,7 +171,7 @@ function RegionWorldMap({ onSelect, leads }: { onSelect: (signal: Signal) => voi
           key={geography.rsmKey}
           geography={geography}
           className="world-country"
-          style={{ fill: "#e2e9e2", stroke: "#f6f5ef", strokeWidth: 0.65, outline: "none" }}
+          style={{ fill: "#ddcfae", stroke: "#f6f1e7", strokeWidth: 0.65, outline: "none" }}
         />)}
       </Geographies>
       {leads.map((signal) => <Marker
@@ -223,21 +239,16 @@ export default function App() {
   return (
     <main className="desk-shell">
       <header className="masthead" id="top">
-        <a className="brand" href="#top" aria-label="Meridian home"><span className="brand-seal"><Globe2 className="brand-globe" size={22} strokeWidth={1.7} /><i className="brand-signal"><Activity size={10} strokeWidth={2.5} /></i></span><span className="brand-copy"><b>Meridian</b><small>GLOBAL TRADE OBSERVATORY</small></span></a>
+        <a className="brand" href="#top" aria-label="Meridian home"><MeridianMark /><span className="brand-copy"><b>Meridian</b><small>GLOBAL TRADE OBSERVATORY</small></span></a>
         <div className="workspace-tag"><span className="workspace-dot" />ANALYST WORKSPACE</div>
       </header>
 
       <section className="notice-band" aria-label="Prototype notice"><span className="notice-kicker"><ShieldAlert size={14} /> DEMO DATA</span><span>All charts, zones, records, quantities, and signals are fictional examples—not real FTZ activity or allegations.</span><button className="notice-help" type="button" title="This mockup uses invented examples only."><CircleHelp size={15} /></button></section>
 
-      <div className="page-intro"><div><p className="eyebrow">GLOBAL TRADE <span>/</span> MULTI-REGION <span>/</span> ZONE MONITOR</p><h1>Foreign-trade zone signal desk</h1><p className="intro-copy">Compare public trade patterns across markets; review each lead in its local FTZ and data context.</p></div><div className="view-controls"><label className="period-control"><MapPin size={15} /><select aria-label="Filter region" value={regionScope} onChange={(event) => setRegionScope(event.target.value)}>{regionOptions.map((region) => <option key={region}>{region}</option>)}</select><ChevronDown size={13} /></label><label className="period-control"><Clock3 size={15} /><select aria-label="Reporting period" value={timeRange} onChange={(event) => setTimeRange(event.target.value)}><option>Last 12 months</option><option>Last 6 months</option><option>Last 3 months</option></select><ChevronDown size={13} /></label></div></div>
-
-      <nav className="section-tabs" role="tablist" aria-label="Analyst workspace sections">{tabOptions.map((tab) => <button type="button" role="tab" aria-selected={activeTab === tab.id} className={activeTab === tab.id ? "active" : ""} key={tab.id} onClick={() => setActiveTab(tab.id)}>{tab.icon}<span>{tab.label}</span>{tab.id === "saved" && savedIds.length > 0 && <i className="tab-count">{savedIds.length}</i>}</button>)}</nav>
-
-      {activeTab === "overview" && <>
-        <section className="welcome-panel" aria-labelledby="welcome-heading">
+      {activeTab === "overview" && <section className="welcome-panel" aria-labelledby="welcome-heading">
           <div className="welcome-copy">
             <p className="welcome-kicker"><Compass size={14} /> ANALYST BRIEFING <span>·</span> GLOBAL TRADE SCREENING</p>
-            <h2 id="welcome-heading">Welcome to Meridian.</h2>
+            <h2 id="welcome-heading">Welcome to <em>Meridian.</em></h2>
             <p>Start with public trade patterns, follow a signal to its evidence, and decide what merits a closer look. Every lead stays in human hands.</p>
             <div className="welcome-actions"><button type="button" onClick={() => setActiveTab("signals")}>Review signals <ArrowRight size={15} /></button><button type="button" className="welcome-secondary" onClick={() => document.getElementById("zone-map")?.scrollIntoView({ behavior: "smooth", block: "center" })}>Explore the map <MapPin size={14} /></button></div>
           </div>
@@ -249,7 +260,13 @@ export default function App() {
             <div className="welcome-connector"><i /></div>
             <div className="welcome-step"><span>03</span><i className="welcome-step-mark person-mark"><Check size={14} /></i><b>Assess</b><small>Human decision</small></div>
           </div>
-        </section>
+        </section>}
+
+      <div className="page-intro"><div><p className="eyebrow">GLOBAL TRADE <span>/</span> MULTI-REGION <span>/</span> ZONE MONITOR</p><h1>Foreign-trade zone <em>signal desk</em></h1><p className="intro-copy">Compare public trade patterns across markets; review each lead in its local FTZ and data context.</p></div><div className="view-controls"><label className="period-control"><MapPin size={15} /><select aria-label="Filter region" value={regionScope} onChange={(event) => setRegionScope(event.target.value)}>{regionOptions.map((region) => <option key={region}>{region}</option>)}</select><ChevronDown size={13} /></label><label className="period-control"><Clock3 size={15} /><select aria-label="Reporting period" value={timeRange} onChange={(event) => setTimeRange(event.target.value)}><option>Last 12 months</option><option>Last 6 months</option><option>Last 3 months</option></select><ChevronDown size={13} /></label></div></div>
+
+      <nav className="section-tabs" role="tablist" aria-label="Analyst workspace sections">{tabOptions.map((tab) => <button type="button" role="tab" aria-selected={activeTab === tab.id} className={activeTab === tab.id ? "active" : ""} key={tab.id} onClick={() => setActiveTab(tab.id)}>{tab.icon}<span>{tab.label}</span>{tab.id === "saved" && savedIds.length > 0 && <i className="tab-count">{savedIds.length}</i>}</button>)}</nav>
+
+      {activeTab === "overview" && <>
         <section className="metric-ribbon overview-metrics" aria-label="Illustrative overview counts"><div className="metric-cell"><span className="metric-label">FICTIONAL REVIEW LEADS</span><strong>{signals.length.toString().padStart(2, "0")}</strong><small>Mock records only</small></div><div className="metric-cell"><span className="metric-label">REGIONS SHOWN</span><strong>{regionStats.length.toString().padStart(2, "0")}</strong><small>Illustrative coverage</small></div><div className="metric-cell"><span className="metric-label">SIGNAL FAMILIES</span><strong>{signalGroups.length.toString().padStart(2, "0")}</strong><small>Non-weight patterns included</small></div><div className="metric-cell metric-note"><span className="metric-label">GLOBAL DATA REALITY</span><strong>Coverage varies by jurisdiction</strong><small>Global trade statistics do not equal FTZ lot-level records.</small></div></section>
         <section className="overview-dashboard-grid">
           <article className="overview-panel region-overview" id="zone-map"><div className="overview-panel-head"><div><p className="eyebrow">ZONE-LEVEL LEADS <span>/</span> DEMO COVERAGE</p><h2>Global trade observatory</h2></div><span className="data-chip">FICTIONAL</span></div><p className="overview-panel-copy">Choose a marker or zone row to inspect its associated discrepancy indicators and analyst context.</p><RegionWorldMap leads={signals} onSelect={(signal) => { setActiveSignalId(signal.id); setRegionScope(signal.region); setActiveTab("signals"); }} /></article>
