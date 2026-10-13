@@ -1,234 +1,132 @@
-# Ethical Sourcing Tracer — Build Spec
+# Zenith — Product Concept
 
-> Instructions for a coding agent (e.g. Claude Code). Drop this file in the repo root (or rename to `CLAUDE.md`) and ask the agent to build from it.
-> **Current data access:** Tavily only. **Planned:** Sayari (and optionally Tradeverifyd). The system must run fully today on Tavily and switch on Sayari automatically when credentials are added — no code changes required.
-
----
-
-## 1. What the product does
-
-A user uploads a source document — a sanctions notice, court filing, suspicious KYC file, customs record, NGO report, or similar. The system:
-
-1. Extracts the companies, people, addresses, identifiers and goods named in it.
-2. Resolves those names to real-world entities.
-3. Expands outward to find the supply chain connected to them (suppliers, buyers, owners, affiliates), tier by tier.
-4. Scores every company for relevance and risk.
-5. Renders an interactive graph showing **all tiers**, with the most relevant companies visually prioritized.
-
-Every node and edge must trace back to the document or data source that produced it.
+> Zenith is a global trade observatory for ethical-sourcing and trade-compliance analysts. It surfaces public-data signals that a product, corridor, or foreign-trade zone (FTZ) deserves a closer look, explains why, and keeps every judgment with a human reviewer.
+>
+> **Live demo:** https://lolacranef.github.io/Zenith-Ethical-Sourcing-/
 
 ---
 
-## 2. Tech stack
+## 1. Problem
 
-- **Backend:** Python 3.11+, FastAPI, Pydantic v2
-- **Storage:** SQLite via SQLAlchemy for the MVP (tables below model a graph). Keep the data layer behind a repository interface so it can move to Postgres or Neo4j later.
-- **Extraction:** Anthropic API (Claude) with structured JSON output validated by Pydantic
-- **Documents:** `pypdf` / `pdfplumber` for text PDFs, `pytesseract` for scanned pages, `python-docx`, `openpyxl` for spreadsheets
-- **Web discovery:** `tavily-python`
-- **Frontend:** React + Vite + TypeScript, Cytoscape.js for the graph (with `cytoscape-dagre` for tiered layout)
-- **Config:** `.env` loaded with `python-dotenv`
+Goods tied to forced labor, sanctions evasion, duty circumvention, or illicit sourcing often move through transshipment hubs and foreign-trade zones, where they can be stored, processed, or relabeled before entering a market. The public data that could reveal those patterns is scattered across national statistics, mirror statistics, enforcement notices, and NGO reporting. It is aggregate, inconsistent across jurisdictions, and easy to over-read.
 
-Verify current SDK method signatures against each vendor's docs before writing adapter code — do not rely on memory for API shapes.
+Analysts need one place to:
+
+1. See where public trade patterns diverge from what would be expected.
+2. Understand which products carry a documented history of risk, and why.
+3. Turn a pattern into a reviewable lead with its limitations stated up front.
+4. Move from a lead to case-level evidence, such as entities, ownership, and shipments, once they have authorized access to that data.
+
+## 2. Users
+
+- Ethical-sourcing and supply-chain due-diligence teams
+- Trade-compliance and customs-risk analysts
+- Researchers and journalists working on forced labor or illicit trade
+
+## 3. Principles
+
+- **Signals, not findings.** A score orders analyst attention. It is never a probability of wrongdoing and never names a company or country as culpable.
+- **Show the evidence and the limits.** Every view states its source, unit, period, and what the data cannot show. For example, aggregate trade statistics cannot identify an FTZ lot.
+- **Global frame, local rules.** Trade comparisons can be global, but FTZ definitions, recordkeeping, and access rights differ by jurisdiction.
+- **Human decision.** The workflow is Observe → Investigate → Assess, and the last step is always a person.
+- **Clear labeling.** Fictional demo content is labeled as fictional, and real data is labeled with its source and retrieval date.
 
 ---
 
-## 3. Environment variables
+## 4. What the demo does today
+
+The demo is a static React app published on GitHub Pages. It has no login, no backend calls, and no uploads.
+
+| Tab | What it shows | Data |
+|---|---|---|
+| **Overview** | Welcome briefing, headline counts, a world map of zone-linked review leads, and expandable signal families (value, routing, quantity, sourcing context) | Fictional |
+| **Signals** | Screening queue with search and filters (signal type, priority, region), plus a lead detail panel: what was flagged, analyst context, public-data context, and a placeholder for authorized record intake | Fictional |
+| **Product watch** | Eight products with a documented history of trade anomalies or enforcement, filterable by risk indication, with mirror-statistics trend charts | **Real** UN Comtrade data plus real public enforcement context |
+| **Trade flows** | How reporter, product, and partner comparisons work, with example charts | Synthetic |
+| **Saved leads** | Leads saved during the session (not persisted) | Fictional |
+| **Data & method** | Source register, method (public screening → review signal → confirm locally), and evidence-discipline notes | Real source links |
+
+The region selector filters the fictional leads. The reporting-period selector is visual only.
+
+### 4a. Product watch method
+
+- **Products and risk indications.** Each product is listed because of public enforcement or guidance, with references shown in the panel:
+  - **Solar modules (HS 8541.43):** UFLPA high-priority sector; 2023 U.S. AD/CVD circumvention ruling
+  - **Unwrought aluminum (HS 7601):** UFLPA high-priority sector; EAPA duty-evasion investigations
+  - **Cotton T-shirts (HS 6109.10):** UFLPA high-priority sector; 2021 Xinjiang Withhold Release Order
+  - **Frozen shrimp (HS 0306.17):** UFLPA high-priority sector; AD/CVD orders
+  - **Natural honey (HS 0409):** AD duties; transshipment prosecutions
+  - **Gold (HS 7108):** FATF trade-based money laundering typology; 3TG conflict mineral
+  - **Tin (HS 8001):** 3TG conflict mineral
+  - **Tropical sawn timber (HS 4407.29):** Lacey Act
+- **Mirror statistics.** For each product, the partner is the largest supplier to the United States in the last full year. Zenith compares what the U.S. reports importing from that partner with what the partner reports exporting to the U.S., month by month over 24 months. The comparison uses the UN Comtrade public API.
+- **Gap and flags.** Gap = U.S. imports ÷ partner exports − 1. A month is flagged when the gap is beyond **±25%**.
+- **Review band.** **Elevated** means 6 or more of 24 months are flagged, **Review** means 2–5, and **Watch** means 0–1. The band comes from the data, not from editorial judgment.
+- **Caveats shown in the UI.** Valuation basis differs (U.S. customs value vs. partner FOB). Shipments cross month boundaries. Re-exports, confidential trade, and classification differences all create gaps. A flag is a reconciliation prompt, not evidence of wrongdoing.
+- **Coverage.** Products appear once their data has been fetched. Some partners don't report monthly data to Comtrade, so the script falls back to the next-largest supplier that does.
+
+---
+
+## 5. Data sources
+
+| Source | Status | Role |
+|---|---|---|
+| UN Comtrade (public API) | **In use** | Monthly mirror statistics for Product watch |
+| ITC Trade Map | Referenced | Country/product comparisons. No public API, so it needs account exports to integrate |
+| U.S. Census FTZ statistics, USITC DataWeb | Referenced | U.S. aggregate trade and FTZ context |
+| 19 CFR Part 146 | Referenced | U.S. FTZ recordkeeping rules |
+| DHS UFLPA, CBP EAPA, FATF, OECD, EU Conflict Minerals Regulation, Lacey Act | Referenced | Why a product is on watch |
+| **Sayari** | **Planned** | Entity resolution, ownership and control, trade relationships, and risk flags behind each lead |
+| Tavily + Claude | Backend only | Web discovery and document extraction in the investigation engine |
+| Tradeverifyd | Stub | Optional future trade-verification provider |
+
+---
+
+## 6. Architecture
 
 ```
-ANTHROPIC_API_KEY=          # required
-TAVILY_API_KEY=             # required (current access)
-
-# Optional — leave blank until access is granted. Providers auto-enable when set.
-SAYARI_CLIENT_ID=
-SAYARI_CLIENT_SECRET=
-TRADEVERIFYD_API_KEY=
-
-MAX_TIER_DEPTH=3
-MAX_NODES_PER_TIER=25
+frontend/                 React + Vite + TypeScript static app (the Zenith demo)
+  src/App.tsx             Tabs, fictional leads, map, signal workflow
+  src/ProductWatch.tsx    Product watch tab and charts (SVG, no chart library)
+  src/data/               Committed UN Comtrade snapshot (comtrade-mirror.json)
+  scripts/fetch-comtrade.mjs   Builds the snapshot; respects the API quota
+docs/                     Built site served by GitHub Pages (npm run build:pages)
+backend/                  FastAPI investigation engine (local only, not yet connected to Zenith)
 ```
 
-On startup, log which providers are active, e.g. `Providers active: tavily | inactive: sayari, tradeverifyd`.
+Trade data is fetched at build time and committed, so the published site stays static and needs no API keys.
+
+### 6a. Investigation engine (backend)
+
+The backend is the case-level layer that a Zenith lead will eventually hand off to. It runs locally and is not called by the current UI. It:
+
+1. Ingests an uploaded document (sanctions notice, court filing, KYC file, customs record, NGO report) and stores text with page and offset provenance.
+2. Extracts companies, people, addresses, identifiers, and goods with Claude, using schema-validated output.
+3. Resolves entities and expands the supply chain tier by tier through a provider registry. Tavily is active today, and Sayari and Tradeverifyd are inactive stubs.
+4. Scores entities for relevance and risk, with an explainable per-factor breakdown.
+5. Serves a tiered graph (Cytoscape JSON) where every node and edge traces back to evidence.
+
+Providers share one interface (capabilities and reliability). When Sayari is implemented and configured, it becomes the primary source for ownership and trade edges, and web search is demoted to news and corroboration. The original detailed build spec for this engine is in git history (commit `cc0f8bf`, `CONCEPT.md`).
 
 ---
 
-## 4. Provider architecture (the key design requirement)
+## 7. Guardrails
 
-All external data goes through a common interface so Sayari can be dropped in later.
-
-```python
-class DataProvider(Protocol):
-    name: str
-    capabilities: set[Capability]   # RESOLVE, OWNERSHIP, TRADE, SANCTIONS, NEWS
-    reliability: float              # 0–1, used in confidence scoring
-
-    def is_configured(self) -> bool: ...
-    def resolve(self, mention: EntityMention) -> list[ResolutionCandidate]: ...
-    def neighbors(self, entity: Entity, kinds: set[EdgeType]) -> list[EdgeCandidate]: ...
-```
-
-- `providers/registry.py` loads every provider, keeps the ones where `is_configured()` is true, and routes each request to the highest-reliability provider that has the needed capability.
-- Results from multiple providers are merged, not overwritten. If two providers support the same edge, keep both sources on the edge and raise its confidence.
-
-### 4a. TavilyProvider — active now
-
-Capabilities: `RESOLVE` (weak), `TRADE` (inferred), `OWNERSHIP` (inferred), `NEWS`. Reliability: `0.4`.
-
-How it works:
-- **Resolve:** search `"<company name>" <country> company registration` and similar; pass top results to Claude to pull out legal name, country, address, registration number, website. Return candidates with confidence based on how many identifiers match the mention.
-- **Neighbors:** run targeted queries such as:
-  - `"<company>" supplier OR supplies OR "sourced from"`
-  - `"<company>" subsidiary OR "parent company" OR "owned by"`
-  - `"<company>" shipments importer exporter`
-  - `"<company>" forced labor OR sanctions OR "entity list"`
-  Use advanced search depth and request raw page content where available. Send each page to Claude with the extraction schema (Section 6) and keep only relationships that explicitly name both parties.
-- Every Tavily-derived edge is marked `basis = "web_inferred"` and stores the URL and a short supporting snippet (under 25 words).
-
-### 4b. SayariProvider — stub now, activates later
-
-Capabilities: `RESOLVE`, `OWNERSHIP`, `TRADE`, `SANCTIONS`. Reliability: `0.9`.
-
-- Build the class with full method signatures, auth handling (OAuth client-credentials token, cached until expiry), retry/backoff, and response-to-model mapping functions.
-- `is_configured()` returns false while credentials are blank, so the app runs without it.
-- Map Sayari concepts to our models: entity resolution → `resolve`; ownership/control relationships → `OWNS`/`CONTROLS` edges; shipment/trade relationships → `SUPPLIES` edges; risk flags → entity `risk_flags`.
-- **Endpoint paths and response fields must be confirmed against Sayari's API documentation once access is granted.** Leave clearly marked `# TODO(sayari-docs)` comments where paths or field names are assumed, and write unit tests with recorded fixtures so the mapping can be checked the moment real responses are available.
-- When Sayari is active, Tavily is demoted to `NEWS` and corroboration only; it should no longer be the primary source for ownership or trade edges.
-
-### 4c. TradeverifydProvider — optional stub
-
-Same pattern as Sayari: capability `TRADE`, reliability `0.8`, inactive until `TRADEVERIFYD_API_KEY` is set.
-
-### 4d. Free supplementary source (optional, no key needed)
-
-- **OpenSanctions bulk data** (consolidated sanctions/PEP dataset): download the default dataset on a schedule and match locally for `SANCTIONS` flags. Check its license terms for the intended use.
+- Never present a pattern, score, or flag as an allegation. Use "lead", "signal", and "reconciliation prompt".
+- Label fictional, synthetic, and real data distinctly, with source and retrieval date on real data.
+- Don't name companies in the demo. Country pairs appear only as factual descriptions of public statistics.
+- Case-level records (FTZ admissions, inventory, withdrawals, entries) require authorization and are not uploaded or analyzed in the demo.
+- Don't compile personal data about private individuals beyond what appears in an uploaded document or a registry record.
+- Keep uploaded documents private to the uploader. The backend has no multi-user isolation yet, so run it on loopback only.
 
 ---
 
-## 5. Data model
+## 8. Roadmap
 
-```
-documents(id, filename, doc_type, uploaded_at, raw_text, page_map_json)
-entities(id, canonical_name, entity_type, country, identifiers_json,
-         addresses_json, risk_flags_json, priority_score, tier, is_seed)
-mentions(id, document_id, entity_id NULL, surface_text, page, char_start,
-         char_end, extracted_attrs_json, resolution_confidence, user_confirmed NULL)
-edges(id, source_entity_id, target_entity_id, edge_type, basis,
-      confidence, first_seen, last_seen)
-evidence(id, edge_id NULL, entity_id NULL, provider, source_ref,
-         snippet, retrieved_at)
-investigations(id, document_id, status, created_at, params_json)
-```
-
-- `entity_type`: company | person | vessel | address
-- `edge_type`: SUPPLIES | BUYS_FROM | OWNS | CONTROLS | DIRECTOR_OF | SHARES_ADDRESS | NAMED_TOGETHER | SANCTIONED_BY
-- `basis`: `document_stated` (in the uploaded file) | `registry` (structured provider like Sayari) | `web_inferred` (Tavily + LLM)
-
----
-
-## 6. Pipeline
-
-### Stage 1 — Ingest
-- Accept PDF, DOCX, XLSX/CSV, TXT, images. Detect scanned PDFs (little or no extractable text) and OCR them.
-- Store raw text plus a page/offset map so any snippet can be located in the original.
-- Classify `doc_type`: sanctions_notice | court_filing | kyc_file | customs_record | ngo_report | other.
-
-### Stage 2 — Extract
-- Chunk text (~3,000 tokens with overlap). For each chunk, call Claude with a doc-type-specific prompt and this output schema:
-
-```json
-{
-  "entities": [
-    {"surface_text": "", "type": "company|person|vessel|address",
-     "country": null, "identifiers": {"registration_no": null, "tax_id": null, "imo": null},
-     "address": null, "role_in_document": "", "page": 0}
-  ],
-  "relationships": [
-    {"source": "", "target": "", "type": "SUPPLIES|OWNS|...", "quote": "", "page": 0}
-  ],
-  "goods": [{"description": "", "hs_code": null}]
-}
-```
-
-- Deduplicate mentions across chunks. Relationships found here get `basis = document_stated` and high confidence.
-
-### Stage 3 — Resolve
-- For each mention, ask all providers with `RESOLVE` for candidates.
-- Score candidates: exact identifier match (strong) > address match > country match > fuzzy name similarity (weak; use `rapidfuzz`).
-- Auto-accept above 0.85, queue 0.5–0.85 for user review in the UI, discard below 0.5.
-- **Never auto-merge two entities on name similarity alone.**
-
-### Stage 4 — Expand tiers
-- Breadth-first from seed entities (tier 0) up to `MAX_TIER_DEPTH`.
-- At each tier, call `neighbors()` on active providers, resolve new counterparties, and record edges with evidence.
-- Limit fan-out with `MAX_NODES_PER_TIER`, keeping the highest-confidence neighbors, but store the overflow count on the parent node so the UI can show "+N more".
-- Detect shell-pattern signals while expanding: shared addresses across many entities, the same director or legal-person owner across several short-lived companies, and circular ownership. Add `SHARES_ADDRESS` edges and risk flags for these.
-- Cache provider responses (SQLite table keyed by provider + request hash) to save Tavily credits and support re-runs.
-
-### Stage 5 — Score and prioritize
-Compute `priority_score` (0–100) per entity as a weighted sum, with weights in a config file:
-
-| Factor | Default weight |
-|---|---|
-| Named directly in source document | 25 |
-| Proximity to seed (tier 1 > 2 > 3) | 20 |
-| Sanctions / watchlist hit | 20 |
-| Strength of trade or ownership link to a flagged entity | 15 |
-| High-risk sector or region for the goods involved | 10 |
-| Shell-pattern signals | 10 |
-
-Multiply by average edge confidence on the entity's path to the seed. Store the per-factor breakdown so the UI can explain every score.
-
-### Stage 6 — API for the frontend
-- `POST /documents` — upload, returns `document_id`
-- `POST /investigations` — start pipeline for a document (run as a background task; expose progress)
-- `GET /investigations/{id}` — status and progress
-- `GET /investigations/{id}/graph` — nodes and edges in Cytoscape JSON format
-- `GET /entities/{id}` — details, score breakdown, all evidence
-- `POST /mentions/{id}/confirm` and `/reject` — user resolution review
-
----
-
-## 7. Visualization requirements
-
-- Tiered layout (dagre, left-to-right): tier 0 seeds on the left, then tier 1, 2, 3.
-- **All tiers are rendered.** Lower-priority nodes are smaller and faded but still present; any node can be expanded to show its hidden "+N more" neighbors.
-- Node size and color = `priority_score`. Seed entities get a distinct outline. Sanctioned entities get a clear badge.
-- Edge style by type (solid = trade, dashed = ownership/control, dotted = shared address / co-mention). Edge opacity = confidence.
-- Visually distinguish `document_stated`, `registry`, and `web_inferred` edges (legend required).
-- Side panel on click: entity details, score breakdown, every piece of evidence with link/page reference, and which provider supplied it.
-- Filters: minimum priority, tier depth, edge type, basis, country.
-- Ranked table view alongside the graph listing entities by priority.
-- Export: graph as PNG, entity table as CSV, and an evidence report as Markdown.
-
----
-
-## 8. Ethics and accuracy guardrails
-
-- Show the evidence for every claim; never display a relationship without at least one evidence record.
-- Label web-inferred links clearly as unverified leads, not findings.
-- Store confidence everywhere and surface it in the UI.
-- Do not compile or display personal data about private individuals beyond what appears in the uploaded document or a registry record (e.g. a named director). No home addresses or personal contact details for individuals.
-- Keep uploaded documents private to the user who uploaded them.
-
----
-
-## 9. Build order
-
-1. Repo skeleton, config loading, provider registry with active/inactive logging.
-2. Ingestion + extraction on a sample sanctions notice; print extracted entities.
-3. TavilyProvider resolve + neighbors; run a 2-tier expansion from the CLI.
-4. Database models and provenance storage.
-5. Scoring.
-6. FastAPI endpoints.
-7. Frontend graph, side panel, filters, ranked table.
-8. SayariProvider and TradeverifydProvider stubs with fixtures and tests.
-9. End-to-end test with 2–3 sample documents.
-
----
-
-## 10. Definition of done (Tavily-only mode)
-
-- Upload a PDF sanctions notice → see seeds extracted, resolved, expanded to at least 2 tiers, scored, and rendered.
-- Every edge clicks through to its evidence.
-- Adding Sayari credentials to `.env` and restarting changes the startup log to show Sayari active, with no code edits.
-- Tests pass for extraction schema validation, scoring, provider routing, and the Sayari mapping fixtures.
+1. **Complete Product watch coverage.** Finish fetching all eight products, then add unit-value checks (value ÷ quantity) and third-country route-shift detection.
+2. **Sayari integration.** Implement the provider against Sayari's verified API contract, then attach entity, ownership, and trade-relationship context to leads and products.
+3. **Connect the investigation engine.** Let a lead open a backend investigation, and bring the tiered evidence graph (`GraphView.tsx`, currently unused) back into the Zenith UI.
+4. **Real leads.** Replace fictional leads with signals generated from real data, keeping the same caveats.
+5. **ITC Trade Map imports.** Load account CSV exports for comparisons the Comtrade preview API can't cover.
+6. **Working period filter.** Make the reporting-period selector filter data, and persist saved leads.
+7. **Authorized record intake.** Access-controlled upload for case records, with jurisdiction-specific FTZ rules.
