@@ -37,8 +37,8 @@ const oecdMinerals = { label: "OECD minerals due diligence", href: "https://mneg
 const products: Product[] = [
   {
     id: "solar", name: "Solar modules", hs: "HS 8541.43", signalCode: "HS 8541", indications: ["forced-labor", "duty-evasion"],
-    history: "Polysilicon, the main input to solar modules, is a UFLPA high-priority sector. In 2023 the U.S. Commerce Department found that certain solar cells and modules completed in Cambodia, Malaysia, Thailand, and Vietnam were circumventing AD/CVD orders on Chinese products.",
-    sources: [uflpa, { label: "Commerce AD/CVD circumvention ruling (2023)" }],
+    history: "Polysilicon, the main input to solar modules, is a UFLPA high-priority sector. In 2023 the U.S. Commerce Department found that certain solar cells and modules completed in Cambodia, Malaysia, Thailand, and Vietnam were circumventing AD/CVD orders on Chinese products. Production then shifted to Indonesia, Laos, and India, which became the subject of new AD/CVD investigations in 2025. Preliminary countervailing duties on Indonesian cells (86–143%) took effect February 26, 2026, with critical circumstances applied to entries about 90 days earlier; final determinations followed in September 2026.",
+    sources: [uflpa, { label: "Commerce AD/CVD circumvention ruling (2023)" }, { label: "Commerce CVD preliminary, Indonesia solar cells (Feb 2026)", href: "https://www.govinfo.gov/content/pkg/FR-2026-02-26/pdf/2026-03896.pdf" }],
   },
   {
     id: "aluminum", name: "Unwrought aluminum", hs: "HS 7601", signalCode: "HS 7601", indications: ["forced-labor", "duty-evasion"],
@@ -188,6 +188,7 @@ export default function ProductWatch({ onOpenSignal }: { onOpenSignal: (code: st
   const [hover, setHover] = useState<number | null>(null);
   const [chartRef, chartWidth] = useElementWidth<HTMLDivElement>();
   const available = products.filter((product) => mirrorData[product.id]);
+  const pending = products.filter((product) => !mirrorData[product.id]);
   const seriesById = useMemo(() => Object.fromEntries(available.map((product) => [product.id, buildSeries(mirrorData[product.id])])), []);
   const visible = available.filter((product) => indication === "all" || product.indications.includes(indication));
   const active = visible.find((product) => product.id === activeId) ?? visible[0] ?? available[0];
@@ -209,8 +210,9 @@ export default function ProductWatch({ onOpenSignal }: { onOpenSignal: (code: st
     <div className="coverage-note"><History size={19} /><div><b>Why these products are on watch</b><p>Each product is listed because of public enforcement or guidance: forced-labor import rules, duty-evasion and transshipment cases, money-laundering typologies, or conflict and illegal-harvest sourcing rules. Trends are real UN Comtrade statistics comparing what the United States reports importing from its largest supplier of each product with what that supplier reports exporting to the United States. A gap is a prompt to reconcile, not evidence of wrongdoing by any country or company.</p></div></div>
     <div className="indication-filter" role="group" aria-label="Filter products by risk indication">
       <button type="button" aria-pressed={indication === "all"} onClick={() => setIndication("all")}>All indications <i>{available.length}</i></button>
-      {(Object.keys(indicationLabels) as Indication[]).map((key) => <button type="button" key={key} aria-pressed={indication === key} onClick={() => setIndication(key)}>{indicationLabels[key]} <i>{available.filter((product) => product.indications.includes(key)).length}</i></button>)}
+      {(Object.keys(indicationLabels) as Indication[]).filter((key) => available.some((product) => product.indications.includes(key))).map((key) => <button type="button" key={key} aria-pressed={indication === key} onClick={() => setIndication(key)}>{indicationLabels[key]} <i>{available.filter((product) => product.indications.includes(key)).length}</i></button>)}
     </div>
+    {pending.length > 0 && <p className="product-pending">Data pending for {pending.map((product) => product.name).join(" · ")}. These appear once their UN Comtrade data has been fetched.</p>}
     {visible.length === 0 && <p className="product-empty">No product with this indication has trade data yet. Showing {active.name}.</p>}
     <div className="product-grid">{visible.map((product) => { const productPoints = seriesById[product.id]; const flags = productPoints.filter((point) => point.flagged).length; const recent = productPoints.filter((point) => point.gap !== null).at(-1);
       return <button type="button" key={product.id} className={`product-card ${product.id === active.id ? "selected" : ""}`} aria-pressed={product.id === active.id} onClick={() => { setActiveId(product.id); setHover(null); }}>

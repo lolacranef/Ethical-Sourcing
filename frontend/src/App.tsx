@@ -248,7 +248,7 @@ export default function App() {
         <div className="workspace-tag"><span className="workspace-dot" />ANALYST WORKSPACE</div>
       </header>
 
-      <section className="notice-band" aria-label="Prototype notice"><span className="notice-kicker"><ShieldAlert size={14} /> DEMO DATA</span><span>All charts, zones, records, quantities, and signals are fictional examples—not real FTZ activity or allegations.</span><button className="notice-help" type="button" title="This mockup uses invented examples only."><CircleHelp size={15} /></button></section>
+      <section className="notice-band" aria-label="Prototype notice"><span className="notice-kicker"><ShieldAlert size={14} /> DEMO DATA</span><span>Review leads, zones, map markers, and Trade flows charts are fictional examples—not real FTZ activity or allegations. Product watch uses real UN Comtrade data.</span><button className="notice-help" type="button" title="This mockup uses invented examples only."><CircleHelp size={15} /></button></section>
 
       {activeTab === "overview" && <section className="welcome-panel" aria-labelledby="welcome-heading">
           <div className="welcome-copy">
@@ -267,7 +267,7 @@ export default function App() {
           </div>
         </section>}
 
-      <div className="page-intro"><div><p className="eyebrow">GLOBAL TRADE <span>/</span> MULTI-REGION <span>/</span> ZONE MONITOR</p><h1>Foreign-trade zone <em>signal desk</em></h1><p className="intro-copy">Compare public trade patterns across markets; review each lead in its local FTZ and data context.</p></div><div className="view-controls"><label className="period-control"><MapPin size={15} /><select aria-label="Filter region" value={regionScope} onChange={(event) => setRegionScope(event.target.value)}>{regionOptions.map((region) => <option key={region}>{region}</option>)}</select><ChevronDown size={13} /></label><label className="period-control"><Clock3 size={15} /><select aria-label="Reporting period" value={timeRange} onChange={(event) => setTimeRange(event.target.value)}><option>Last 12 months</option><option>Last 6 months</option><option>Last 3 months</option></select><ChevronDown size={13} /></label></div></div>
+      <div className="page-intro"><div><p className="eyebrow">GLOBAL TRADE <span>/</span> MULTI-REGION <span>/</span> ZONE MONITOR</p><h1>Trade <em>signal desk</em></h1><p className="intro-copy">Compare public trade patterns across markets; review each lead in its local FTZ and data context.</p></div><div className="view-controls"><label className="period-control"><MapPin size={15} /><select aria-label="Filter region" value={regionScope} onChange={(event) => setRegionScope(event.target.value)}>{regionOptions.map((region) => <option key={region}>{region}</option>)}</select><ChevronDown size={13} /></label><label className="period-control"><Clock3 size={15} /><select aria-label="Reporting period" value={timeRange} onChange={(event) => setTimeRange(event.target.value)}><option>Last 12 months</option><option>Last 6 months</option><option>Last 3 months</option></select><ChevronDown size={13} /></label></div></div>
 
       <nav className="section-tabs" role="tablist" aria-label="Analyst workspace sections">{tabOptions.map((tab) => <button type="button" role="tab" aria-selected={activeTab === tab.id} className={activeTab === tab.id ? "active" : ""} key={tab.id} onClick={() => setActiveTab(tab.id)}>{tab.icon}<span>{tab.label}</span>{tab.id === "saved" && savedIds.length > 0 && <i className="tab-count">{savedIds.length}</i>}</button>)}</nav>
 

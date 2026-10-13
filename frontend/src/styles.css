@@ -391,6 +391,7 @@ body, .desk-shell { background-image: url("data:image/svg+xml,%3Csvg xmlns='http
 .indication-filter i { min-width: 16px; height: 16px; padding: 0 4px; display: grid; place-items: center; color: #6c5f50; background: #eee4cf; border-radius: 999px; font: normal 8px var(--mono); }
 .indication-filter button[aria-pressed="true"] i { color: #203b38; background: #e3c27a; }
 .product-empty { margin: 0 0 12px; color: #7d7062; font-size: 9px; }
+.product-pending { margin: -4px 0 14px; color: #7d7062; font-size: 11px; line-height: 1.5; }
 .product-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .product-card { min-width: 0; padding: 12px 13px 10px; display: grid; align-content: start; gap: 7px; text-align: left; background: var(--paper); border: 1px solid #cdbd9b; box-shadow: 3px 3px 0 #ddcfb1; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
 .product-card:hover { transform: translateY(-1px); box-shadow: 4px 5px 0 #d6c6a4; }
