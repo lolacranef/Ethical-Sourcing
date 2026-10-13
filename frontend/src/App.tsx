@@ -1,334 +1,271 @@
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import {
-  AlertTriangle,
-  ArrowDownToLine,
+  Activity,
+  ArrowRight,
+  ArrowUpRight,
+  Bookmark,
+  BookOpen,
+  Check,
   ChevronDown,
-  FileUp,
+  CircleHelp,
+  Clock3,
+  Compass,
+  ExternalLink,
+  FileSearch,
   Filter,
-  Network,
-  RefreshCw,
+  Gauge,
+  Globe2,
+  MapPin,
   Search,
-  X,
+  ShieldAlert,
+  SlidersHorizontal,
+  Upload,
+  Waypoints,
 } from "lucide-react";
-import GraphView from "./GraphView";
+import { ComposableMap, Geographies, Geography, Marker } from "react-simple-maps";
+import worldAtlasUrl from "world-atlas/countries-110m.json?url";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
-
-type Evidence = {
+type Signal = {
   id: string;
-  provider: string;
-  source_ref: string;
-  snippet: string;
-  retrieved_at?: string;
+  title: string;
+  type: string;
+  zone: string;
+  region: string;
+  coordinates: [number, number];
+  area: string;
+  product: string;
+  code: string;
+  period: string;
+  score: number;
+  change: string;
+  severity: "Elevated" | "Review" | "Watch";
+  description: string;
+  why: string;
+  indicators: string[];
+  publicData: string[];
 };
 
-type GraphNode = {
-  id: string;
-  label: string;
-  entity_type: string;
-  country?: string | null;
-  tier: number;
-  priority_score: number;
-  score_factors: Record<string, number>;
-  risk_flags: unknown[];
-  is_seed: boolean;
-  resolution_status: string;
-  overflow_count: number;
-};
+type Tab = "overview" | "signals" | "flows" | "saved" | "sources";
 
-type GraphEdge = {
-  id: string;
-  source: string;
-  target: string;
-  label: string;
-  basis: string;
-  confidence: number;
-  evidence: Evidence[];
-};
+const signals: Signal[] = [
+  {
+    id: "SIG-0241", title: "Export value diverges from recent range", type: "Value pattern",
+    zone: "Illustrative Zone A", region: "Americas", coordinates: [-82, 22], area: "Illustrative corridor 01", product: "Solar modules and cells",
+    code: "HS 8541", period: "Jan–Mar 2026", score: 78, change: "+42% vs. prior quarter", severity: "Elevated",
+    description: "Illustrative public-trade pattern: reported export value rose while the reported product mix changed. Public aggregates cannot establish that the same goods entered or left a specific FTZ.",
+    why: "A sharp change can be consistent with ordinary demand or reporting changes. Review product classification, origin, route, and corroborating records before drawing conclusions.",
+    indicators: ["Trade value shift", "Product-mix change", "FTZ link unverified"], publicData: ["Census trade statistics", "USITC DataWeb", "Trade Map"],
+  },
+  {
+    id: "SIG-0186", title: "Partner-country pattern changed", type: "Routing pattern",
+    zone: "Illustrative Zone B", region: "Asia-Pacific", coordinates: [116, 19], area: "Illustrative corridor 02", product: "Unwrought aluminum",
+    code: "HS 7601", period: "Oct 2025–Mar 2026", score: 64, change: "New partner in period", severity: "Review",
+    description: "Illustrative aggregate data shows a new reported partner-country relationship for this product group in the selected period. This is not shipment-level routing evidence.",
+    why: "Changed routes may reflect legitimate sourcing or logistics changes. Compare mirror statistics and check origin documentation, transshipment rules, and company-specific records if authorized.",
+    indicators: ["Partner-country shift", "Mirror-data check", "Origin needs corroboration"], publicData: ["Trade Map", "Census trade statistics"],
+  },
+  {
+    id: "SIG-0113", title: "Reported quantity is inconsistent across sources", type: "Quantity comparison",
+    zone: "Illustrative Zone C", region: "Europe", coordinates: [15, 49], area: "Illustrative corridor 03", product: "Refined copper products",
+    code: "HS 7403", period: "FY 2025", score: 52, change: "Mirror data differs", severity: "Watch",
+    description: "Illustrative comparison of partner-reported aggregate quantities shows a difference. Different valuation bases, timing, classification, and reporting units can explain mirror-data gaps.",
+    why: "Treat as a reconciliation prompt only. Product-specific reporting units vary, and some public quantity fields may be missing or suppressed.",
+    indicators: ["Mirror-statistic gap", "Unit validation needed", "No lot linkage"], publicData: ["Trade Map", "USITC DataWeb"],
+  },
+  {
+    id: "SIG-0072", title: "High-risk commodity needs sourcing context", type: "Sourcing context",
+    zone: "Illustrative Zone D", region: "Middle East & Africa", coordinates: [42, 11], area: "Illustrative corridor 04", product: "Natural rubber",
+    code: "HS 4001", period: "FY 2025", score: 39, change: "Contextual lead", severity: "Watch",
+    description: "Illustrative commodity-level lead for analyst review. Public trade totals do not identify plantations, processors, workers, or the actual contents of an FTZ lot.",
+    why: "Ethical-sourcing review requires a traceable connection to a supplier, site, or production lot plus credible labor-rights evidence. Commodity exposure alone is not a finding.",
+    indicators: ["Commodity exposure", "Upstream origin unknown", "Labor evidence absent"], publicData: ["Trade Map", "Open-source research"],
+  },
+];
 
-type GraphData = {
-  nodes: { data: GraphNode }[];
-  edges: { data: GraphEdge }[];
-};
+const sourceLinks = [
+  { label: "ITC Trade Map", href: "https://www.intracen.org/resources/tools/trade-map", status: "Global · country / product" },
+  { label: "Census FTZ statistics", href: "https://www.census.gov/foreign-trade/aip/ftz_guidelines.pdf", status: "United States · aggregate" },
+  { label: "USITC DataWeb", href: "https://www.usitc.gov/applications/dataweb/faqs", status: "United States · aggregate" },
+  { label: "19 CFR Part 146", href: "https://www.ecfr.gov/current/title-19/chapter-I/part-146", status: "United States · FTZ rules" },
+];
 
-type Investigation = {
-  investigation_id: string;
-  status: string;
-  progress: number;
-  error?: string | null;
-  params?: { expansion_note?: string };
-};
+const regionOptions = ["All regions", "Americas", "Europe", "Asia-Pacific", "Middle East & Africa"];
 
-type EntityDetails = {
-  id: string;
-  canonical_name: string;
-  entity_type: string;
-  country?: string | null;
-  priority_score: number;
-  score_factors: Record<string, number>;
-  tier: number;
-  is_seed: boolean;
-  resolution_status: string;
-  evidence: Evidence[];
-};
+const tabOptions: { id: Tab; label: string; icon: React.ReactNode }[] = [
+  { id: "overview", label: "Overview", icon: <Activity size={15} /> },
+  { id: "signals", label: "Signals", icon: <Filter size={15} /> },
+  { id: "flows", label: "Trade flows", icon: <Waypoints size={15} /> },
+  { id: "saved", label: "Saved leads", icon: <Bookmark size={15} /> },
+  { id: "sources", label: "Data & method", icon: <BookOpen size={15} /> },
+];
 
-type ProviderStatus = { active: string[]; inactive: string[] };
+function SeverityPill({ severity }: { severity: Signal["severity"] }) {
+  return <span className={`severity-pill ${severity.toLowerCase()}`}><i />{severity}</span>;
+}
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, options);
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({ detail: response.statusText }));
-    throw new Error(body.detail || `Request failed (${response.status})`);
-  }
-  return response.json() as Promise<T>;
+function ScoreBar({ score }: { score: number }) {
+  return <div className="score-line"><span className="score-track"><i style={{ width: `${score}%` }} /></span><b>{score}</b></div>;
+}
+
+function TradePulseChart() {
+  const points = "0,87 54,73 108,78 162,46 216,58 270,30 324,43 378,18 432,38 486,25 540,8";
+  return <div className="chart-frame">
+    <div className="chart-axis-labels"><span>HIGHER INDEX</span><span>ILLUSTRATIVE INDEX · NOT DOLLARS</span></div>
+    <svg className="pulse-chart" viewBox="0 0 560 120" role="img" aria-label="Fictional monthly trade index trend, included only to demonstrate chart layout">
+      <defs><linearGradient id="pulseFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#3d8c83" stopOpacity=".25"/><stop offset="100%" stopColor="#3d8c83" stopOpacity="0"/></linearGradient></defs>
+      {[25, 55, 85, 115].map((y) => <line key={y} x1="0" x2="560" y1={y} y2={y} className="chart-gridline" />)}
+      <polygon points={`0,120 ${points} 540,120`} fill="url(#pulseFill)" />
+      <polyline points={points} className="chart-line" />
+      {points.split(" ").map((point, index) => { const [cx, cy] = point.split(","); return <circle key={point} cx={cx} cy={cy} r="3" className="chart-point"><title>{`Illustrative period ${index + 1}`}</title></circle>; })}
+    </svg>
+    <div className="chart-months"><span>OCT</span><span>NOV</span><span>DEC</span><span>JAN</span><span>FEB</span><span>MAR</span><span>APR</span><span>MAY</span><span>JUN</span><span>JUL</span><span>AUG</span></div>
+  </div>;
+}
+
+function ProductBars() {
+  const rows = [
+    { name: "Solar components", hs: "8541", value: 84, color: "teal" },
+    { name: "Aluminum", hs: "7601", value: 68, color: "ochre" },
+    { name: "Copper products", hs: "7403", value: 49, color: "coral" },
+    { name: "Natural rubber", hs: "4001", value: 34, color: "blue" },
+  ];
+  return <div className="product-bars">{rows.map((row) => <div className="product-bar-row" key={row.hs}>
+    <div className="product-bar-title"><span>{row.name}</span><code>HS {row.hs}</code></div>
+    <div className="product-bar-track"><i className={row.color} style={{ width: `${row.value}%` }} /></div>
+    <span className="product-bar-value">{row.value}</span>
+  </div>)}</div>;
+}
+
+function FlowDiagram() {
+  return <div className="flow-diagram" aria-label="Aggregate data comparison workflow, not physical shipment tracking">
+    <div className="flow-node origin"><span>REPORTER</span><b>Economy</b><small>Reported flow</small></div>
+    <ArrowRight className="flow-arrow" size={19} />
+    <div className="flow-node product"><span>PRODUCT</span><b>HS category</b><small>2, 4, or 6 digit</small></div>
+    <ArrowRight className="flow-arrow" size={19} />
+    <div className="flow-node partner"><span>PARTNER</span><b>Country / region</b><small>Mirror comparison</small></div>
+    <p className="flow-footnote">These are public statistical dimensions. They do not identify a shipment, FTZ lot, or chain of custody.</p>
+  </div>;
+}
+
+function RegionWorldMap({ onSelect, leads }: { onSelect: (signal: Signal) => void; leads: Signal[] }) {
+  return <div className="world-map-wrap">
+    <ComposableMap projection="geoEqualEarth" projectionConfig={{ scale: 155 }} width={760} height={360} aria-label="World map with illustrative zone-linked review leads">
+      <Geographies geography={worldAtlasUrl}>
+        {({ geographies }) => geographies.map((geography) => <Geography
+          key={geography.rsmKey}
+          geography={geography}
+          className="world-country"
+          style={{ fill: "#e2e9e2", stroke: "#f6f5ef", strokeWidth: 0.65, outline: "none" }}
+        />)}
+      </Geographies>
+      {leads.map((signal) => <Marker
+        key={signal.id}
+        coordinates={signal.coordinates}
+        className="zone-map-marker"
+        role="button"
+        tabIndex={0}
+        aria-label={`${signal.zone}: ${signal.type}, ${signal.severity} review priority ${signal.score}. Illustrative only.`}
+        onClick={() => onSelect(signal)}
+        onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onSelect(signal); } }}
+      >
+        <title>{`${signal.zone} · ${signal.severity} review lead · illustrative only`}</title>
+        <circle className={`map-marker map-${signal.severity.toLowerCase()}`} r={Math.max(6, signal.score / 9)} />
+        <circle className={`map-marker-halo map-${signal.severity.toLowerCase()}`} r={Math.max(11, signal.score / 5)} />
+      </Marker>)}
+    </ComposableMap>
+    <div className="world-zone-list">{leads.map((signal) => <button type="button" className="world-zone-row" key={signal.id} onClick={() => onSelect(signal)}><i className={`zone-risk-dot ${signal.severity.toLowerCase()}`} /><span className="world-zone-copy"><b>{signal.zone}</b><small>{signal.region} · {signal.type}</small></span><SeverityPill severity={signal.severity} /><strong className="world-zone-score">{signal.score}</strong></button>)}</div>
+    <details className="map-risk-explanation"><summary>How to read marker colors and scores</summary><div><p>Teal, ochre, and vermilion show the fictional Watch, Review, and Elevated triage bands. The 0–100 value is a mock analyst-priority score, not a probability of wrongdoing or a real assessment of the zone.</p><button type="button" onClick={() => onSelect(leads[0])}>Open example signal <ArrowRight size={13} /></button></div></details>
+    <p className="map-disclaimer">Only illustrative zone-linked leads are shown. Marker positions are schematic, not verified zone coordinates; colors indicate mock review priority, not assessed real-world zone risk.</p>
+  </div>;
 }
 
 export default function App() {
-  const [providers, setProviders] = useState<ProviderStatus>({ active: [], inactive: [] });
-  const [investigation, setInvestigation] = useState<Investigation | null>(null);
-  const [graph, setGraph] = useState<GraphData>({ nodes: [], edges: [] });
-  const [selectedEntity, setSelectedEntity] = useState<EntityDetails | null>(null);
-  const [selectedEdge, setSelectedEdge] = useState<GraphEdge | null>(null);
-  const [minimumPriority, setMinimumPriority] = useState(0);
-  const [maximumTier, setMaximumTier] = useState(3);
-  const [basisFilter, setBasisFilter] = useState("all");
-  const [edgeTypeFilter, setEdgeTypeFilter] = useState("all");
-  const [isUploading, setIsUploading] = useState(false);
-  const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const [activeSignalId, setActiveSignalId] = useState(signals[0].id);
+  const [search, setSearch] = useState("");
+  const [signalType, setSignalType] = useState("All signals");
+  const [severity, setSeverity] = useState("All priorities");
+  const [timeRange, setTimeRange] = useState("Last 12 months");
+  const [regionScope, setRegionScope] = useState("All regions");
+  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [notice, setNotice] = useState("");
 
-  useEffect(() => {
-    request<{ providers: ProviderStatus }>("/health")
-      .then((health) => setProviders(health.providers))
-      .catch(() => setError("The API is unavailable. Start the backend to upload and analyze a document."));
-  }, []);
+  const filteredSignals = useMemo(() => signals.filter((signal) => {
+    const query = search.trim().toLowerCase();
+    const matchesQuery = !query || [signal.title, signal.zone, signal.product, signal.code, signal.area].some((value) => value.toLowerCase().includes(query));
+    return matchesQuery && (signalType === "All signals" || signal.type === signalType)
+      && (severity === "All priorities" || signal.severity === severity)
+      && (regionScope === "All regions" || signal.region === regionScope);
+  }), [search, signalType, severity, regionScope]);
+  const activeSignal = filteredSignals.find((signal) => signal.id === activeSignalId) ?? filteredSignals[0] ?? null;
+  const savedSignals = signals.filter((signal) => savedIds.includes(signal.id) && (regionScope === "All regions" || signal.region === regionScope));
+  const regionStats = regionOptions.slice(1).map((region) => ({ region, count: signals.filter((signal) => signal.region === region).length }));
+  const signalGroups = [...new Set(signals.map((signal) => signal.type))].map((type) => ({ type, count: signals.filter((signal) => signal.type === type).length }));
+  const toggleSaved = (id: string) => setSavedIds((current) => current.includes(id) ? current.filter((savedId) => savedId !== id) : [...current, id]);
 
-  useEffect(() => {
-    if (!investigation?.investigation_id || ["completed", "failed"].includes(investigation.status)) return;
-    let cancelled = false;
-    const poll = async () => {
-      try {
-        const updated = await request<Investigation>(`/investigations/${investigation.investigation_id}`);
-        if (cancelled) return;
-        setInvestigation(updated);
-        if (updated.status === "completed") {
-          setGraph(await request<GraphData>(`/investigations/${investigation.investigation_id}/graph`));
-        }
-      } catch (reason) {
-        if (!cancelled) setError(reason instanceof Error ? reason.message : "Unable to retrieve investigation status.");
-      }
-    };
-    void poll();
-    const timer = window.setInterval(poll, 1300);
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-    };
-  }, [investigation?.investigation_id, investigation?.status]);
+  const signalQueue = (items: Signal[]) => <div className="signal-list">{items.map((signal) => <button className={`signal-row ${activeSignal?.id === signal.id ? "selected" : ""}`} key={signal.id} type="button" onClick={() => { setActiveSignalId(signal.id); setActiveTab("signals"); }}>
+    <span className="signal-main"><span className={`signal-mark ${signal.severity.toLowerCase()}`}><Activity size={16} /></span><span className="signal-text"><strong>{signal.title}</strong><span>{signal.product} <i>·</i> {signal.code}</span><small><MapPin size={12} />{signal.region}<i>·</i>{signal.zone}</small></span></span>
+    <span className="signal-period">{signal.period}</span><span className="signal-priority"><SeverityPill severity={signal.severity} /><ScoreBar score={signal.score} /><small>{signal.change}</small></span>
+  </button>)}{items.length === 0 && <div className="queue-empty"><Search size={20} /><strong>No matching leads</strong><span>{activeTab === "saved" ? "Save a lead from its detail panel and it will appear here." : "Change or clear the filters to see the illustrative records."}</span><button type="button" onClick={() => { setSearch(""); setSignalType("All signals"); setSeverity("All priorities"); setActiveTab("signals"); }}>Clear filters</button></div>}</div>;
 
-  const visibleNodes = graph.nodes.filter(({ data }) =>
-    data.tier <= maximumTier && data.priority_score >= minimumPriority,
-  );
-  const visibleIds = new Set(visibleNodes.map(({ data }) => data.id));
-  const visibleEdges = graph.edges.filter(({ data }) =>
-    visibleIds.has(data.source) && visibleIds.has(data.target)
-    && (basisFilter === "all" || data.basis === basisFilter)
-    && (edgeTypeFilter === "all" || data.label === edgeTypeFilter),
-  );
-  const rankedNodes = [...visibleNodes].sort((left, right) => right.data.priority_score - left.data.priority_score);
-  const edgeTypes = [...new Set(graph.edges.map(({ data }) => data.label))].sort();
-
-  const uploadFile = async (file?: File) => {
-    if (!file) return;
-    setIsUploading(true);
-    setError("");
-    setSelectedEntity(null);
-    setSelectedEdge(null);
-    setGraph({ nodes: [], edges: [] });
-    setInvestigation(null);
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      const document = await request<{ document_id: string }>("/documents", { method: "POST", body: form });
-      const started = await request<{ investigation_id: string; status: string }>("/investigations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ document_id: document.document_id }),
-      });
-      setInvestigation({ ...started, progress: 0 });
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Upload failed.");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const selectEntity = async (id: string) => {
-    setSelectedEdge(null);
-    try {
-      setSelectedEntity(await request<EntityDetails>(`/entities/${id}`));
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to load entity evidence.");
-    }
-  };
-
-  const exportRanked = () => {
-    if (!investigation) return;
-    window.open(`${API_BASE}/investigations/${investigation.investigation_id}/export.csv`, "_blank", "noopener,noreferrer");
-  };
+  const signalDetail = (signal: Signal | null) => <aside className="detail-column" aria-label="Selected signal details">{signal ? <>
+    <div className="detail-topline"><span className="eyebrow">LEAD DETAIL</span><button className={`save-button ${savedIds.includes(signal.id) ? "saved" : ""}`} type="button" onClick={() => toggleSaved(signal.id)}>{savedIds.includes(signal.id) ? <Check size={14} /> : <BookOpen size={14} />}{savedIds.includes(signal.id) ? "Saved" : "Save lead"}</button></div>
+    <SeverityPill severity={signal.severity} /><h2 className="detail-title">{signal.title}</h2><p className="detail-product">{signal.product} <span>·</span> {signal.code}</p>
+    <div className="score-feature"><div className="score-number"><strong>{signal.score}</strong><small>/100</small></div><div><b>Analyst review priority</b><span>Illustrative ranking for this mockup</span><div className="feature-track"><i style={{ width: `${signal.score}%` }} /></div></div></div>
+    <dl className="record-facts"><div><dt>REGION</dt><dd>{signal.region}</dd></div><div><dt>ZONE REFERENCE</dt><dd>{signal.zone}</dd></div><div><dt>OBSERVATION PERIOD</dt><dd>{signal.period}</dd></div><div><dt>SCREENING TYPE</dt><dd>{signal.type}</dd></div></dl>
+    <section className="detail-section"><h3>What was flagged</h3><p>{signal.description}</p><div className="indicator-list">{signal.indicators.map((indicator) => <span key={indicator}>{indicator}</span>)}</div></section>
+    <section className="detail-section review-note"><h3>Analyst context</h3><p>{signal.why}</p></section>
+    <section className="detail-section source-section"><h3>Public data context</h3><div className="source-chip-list">{signal.publicData.map((source) => <span key={source}>{source}</span>)}</div><p className="source-caveat">Sources support aggregate screening. They do not identify a shipment’s FTZ lot or prove a specific discrepancy.</p></section>
+    <div className="evidence-intake"><div className="intake-icon"><Upload size={17} /></div><div><b>Authorized case records</b><span>Future capability · not connected in this prototype</span></div><button type="button" title="Record upload is not enabled in this mockup." onClick={() => setNotice("Record intake is a future, access-controlled capability. No files are uploaded or analyzed in this mockup.")}><Upload size={14} /> Add records</button><small>With authorized access, admission, lot, inventory movement, processing, withdrawal, and entry records could support case-level reconciliation.</small></div>
+    {notice && <div className="inline-notice" role="status">{notice}<button type="button" onClick={() => setNotice("")} aria-label="Dismiss notice">×</button></div>}
+  </> : <div className="detail-blank"><FileSearch size={24} /><h2>Choose a review lead</h2><p>Select a row to inspect its scope, context, and public-data limitations.</p></div>}</aside>;
 
   return (
-    <main className="app-shell">
-      <header className="topbar">
-        <div className="brand-lockup">
-          <div className="brand-mark"><Network size={19} strokeWidth={2.2} /></div>
-          <div><strong>SourceSight</strong><span>ETHICAL SOURCING TRACER</span></div>
-        </div>
-        <div className="provider-status" aria-label="Active data providers">
-          <span className="status-light" />
-          <span>{providers.active.length ? providers.active.join(" · ") : "No live providers"}</span>
-          <span className="provider-separator">/</span>
-          <span className="muted">{providers.inactive.join(" · ")}</span>
-        </div>
-        <label className={`upload-button ${isUploading ? "is-busy" : ""}`}>
-          {isUploading ? <RefreshCw size={16} className="spin" /> : <FileUp size={16} />}
-          <span>{isUploading ? "Uploading" : "Upload source"}</span>
-          <input
-            type="file"
-            accept=".pdf,.docx,.xlsx,.xlsm,.csv,.txt,.md"
-            disabled={isUploading}
-            onChange={(event) => { void uploadFile(event.target.files?.[0]); event.currentTarget.value = ""; }}
-          />
-        </label>
+    <main className="desk-shell">
+      <header className="masthead" id="top">
+        <a className="brand" href="#top" aria-label="Meridian home"><span className="brand-seal"><Globe2 className="brand-globe" size={22} strokeWidth={1.7} /><i className="brand-signal"><Activity size={10} strokeWidth={2.5} /></i></span><span className="brand-copy"><b>Meridian</b><small>GLOBAL TRADE OBSERVATORY</small></span></a>
+        <div className="workspace-tag"><span className="workspace-dot" />ANALYST WORKSPACE</div>
       </header>
 
-      <section className="notice-strip">
-        <AlertTriangle size={15} />
-        <span>Web-inferred links are unverified leads. Priority is for review only, not a finding or legal determination.</span>
-        {investigation?.params?.expansion_note && <span className="notice-extra">{investigation.params.expansion_note}</span>}
-      </section>
+      <section className="notice-band" aria-label="Prototype notice"><span className="notice-kicker"><ShieldAlert size={14} /> DEMO DATA</span><span>All charts, zones, records, quantities, and signals are fictional examples—not real FTZ activity or allegations.</span><button className="notice-help" type="button" title="This mockup uses invented examples only."><CircleHelp size={15} /></button></section>
 
-      {error && <div className="error-strip" role="alert"><span>{error}</span><button type="button" onClick={() => setError("")} aria-label="Dismiss error"><X size={16} /></button></div>}
+      <div className="page-intro"><div><p className="eyebrow">GLOBAL TRADE <span>/</span> MULTI-REGION <span>/</span> ZONE MONITOR</p><h1>Foreign-trade zone signal desk</h1><p className="intro-copy">Compare public trade patterns across markets; review each lead in its local FTZ and data context.</p></div><div className="view-controls"><label className="period-control"><MapPin size={15} /><select aria-label="Filter region" value={regionScope} onChange={(event) => setRegionScope(event.target.value)}>{regionOptions.map((region) => <option key={region}>{region}</option>)}</select><ChevronDown size={13} /></label><label className="period-control"><Clock3 size={15} /><select aria-label="Reporting period" value={timeRange} onChange={(event) => setTimeRange(event.target.value)}><option>Last 12 months</option><option>Last 6 months</option><option>Last 3 months</option></select><ChevronDown size={13} /></label></div></div>
 
-      <section className="workspace-head">
-        <div>
-          <p className="eyebrow">INVESTIGATION WORKSPACE</p>
-          <h1>{investigation ? "Supply chain map" : "Evidence-led supply chain research"}</h1>
-        </div>
-        {investigation && <div className="run-status">
-          <span className={`run-dot ${investigation.status}`} />
-          <span>{investigation.status.replaceAll("_", " ")}</span>
-          <strong>{investigation.progress}%</strong>
-        </div>}
-      </section>
+      <nav className="section-tabs" role="tablist" aria-label="Analyst workspace sections">{tabOptions.map((tab) => <button type="button" role="tab" aria-selected={activeTab === tab.id} className={activeTab === tab.id ? "active" : ""} key={tab.id} onClick={() => setActiveTab(tab.id)}>{tab.icon}<span>{tab.label}</span>{tab.id === "saved" && savedIds.length > 0 && <i className="tab-count">{savedIds.length}</i>}</button>)}</nav>
 
-      {investigation && !["completed", "failed"].includes(investigation.status) && (
-        <div className="progress-track"><span style={{ width: `${investigation.progress}%` }} /></div>
-      )}
-      {investigation?.status === "failed" && <div className="failure-panel"><strong>Investigation stopped</strong><span>{investigation.error}</span><small>Document text remains stored locally. Configure the required provider key, then upload this source again.</small></div>}
-
-      {graph.nodes.length === 0 ? (
-        <section className="empty-state">
-          <div className="empty-grid"><div className="empty-orbit orbit-a" /><div className="empty-orbit orbit-b" /><Network size={34} /></div>
-          <h2>{investigation?.status === "completed" ? "No entities were extracted" : "Start with a source document"}</h2>
-          <p>{investigation?.status === "completed" ? "The extraction returned no source-grounded entities." : "Upload a notice, filing, customs record, report, spreadsheet, or text file to begin."}</p>
-          {!investigation && <label className="empty-upload">Choose document<input type="file" accept=".pdf,.docx,.xlsx,.xlsm,.csv,.txt,.md" onChange={(event) => { void uploadFile(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label>}
+      {activeTab === "overview" && <>
+        <section className="welcome-panel" aria-labelledby="welcome-heading">
+          <div className="welcome-copy">
+            <p className="welcome-kicker"><Compass size={14} /> ANALYST BRIEFING <span>·</span> GLOBAL TRADE SCREENING</p>
+            <h2 id="welcome-heading">Welcome to Meridian.</h2>
+            <p>Start with public trade patterns, follow a signal to its evidence, and decide what merits a closer look. Every lead stays in human hands.</p>
+            <div className="welcome-actions"><button type="button" onClick={() => setActiveTab("signals")}>Review signals <ArrowRight size={15} /></button><button type="button" className="welcome-secondary" onClick={() => document.getElementById("zone-map")?.scrollIntoView({ behavior: "smooth", block: "center" })}>Explore the map <MapPin size={14} /></button></div>
+          </div>
+          <div className="welcome-side" aria-label="Review workflow">
+            <div className="welcome-side-label">A CLEAR REVIEW PATH</div>
+            <div className="welcome-step"><span>01</span><i className="welcome-step-mark data-mark"><Activity size={14} /></i><b>Observe</b><small>Public patterns</small></div>
+            <div className="welcome-connector"><i /></div>
+            <div className="welcome-step"><span>02</span><i className="welcome-step-mark signal-mark-welcome"><Search size={14} /></i><b>Investigate</b><small>Explainable leads</small></div>
+            <div className="welcome-connector"><i /></div>
+            <div className="welcome-step"><span>03</span><i className="welcome-step-mark person-mark"><Check size={14} /></i><b>Assess</b><small>Human decision</small></div>
+          </div>
         </section>
-      ) : (
-        <>
-          <section className="summary-row" aria-label="Investigation summary">
-            <div><span>VISIBLE ENTITIES</span><strong>{visibleNodes.length}</strong></div>
-            <div><span>EVIDENCED LINKS</span><strong>{visibleEdges.length}</strong></div>
-            <div><span>DEEPEST TIER</span><strong>{Math.max(0, ...visibleNodes.map(({ data }) => data.tier))}</strong></div>
-            <div className="summary-actions">
-              <a href={`${API_BASE}/investigations/${investigation?.investigation_id}/export.md`} target="_blank" rel="noreferrer" title="Download evidence report as Markdown"><ArrowDownToLine size={15} /> Evidence report</a>
-              <button type="button" onClick={exportRanked} title="Export entity table as CSV"><ArrowDownToLine size={15} /> CSV</button>
-            </div>
-          </section>
+        <section className="metric-ribbon overview-metrics" aria-label="Illustrative overview counts"><div className="metric-cell"><span className="metric-label">FICTIONAL REVIEW LEADS</span><strong>{signals.length.toString().padStart(2, "0")}</strong><small>Mock records only</small></div><div className="metric-cell"><span className="metric-label">REGIONS SHOWN</span><strong>{regionStats.length.toString().padStart(2, "0")}</strong><small>Illustrative coverage</small></div><div className="metric-cell"><span className="metric-label">SIGNAL FAMILIES</span><strong>{signalGroups.length.toString().padStart(2, "0")}</strong><small>Non-weight patterns included</small></div><div className="metric-cell metric-note"><span className="metric-label">GLOBAL DATA REALITY</span><strong>Coverage varies by jurisdiction</strong><small>Global trade statistics do not equal FTZ lot-level records.</small></div></section>
+        <section className="overview-dashboard-grid">
+          <article className="overview-panel region-overview" id="zone-map"><div className="overview-panel-head"><div><p className="eyebrow">ZONE-LEVEL LEADS <span>/</span> DEMO COVERAGE</p><h2>Global trade observatory</h2></div><span className="data-chip">FICTIONAL</span></div><p className="overview-panel-copy">Choose a marker or zone row to inspect its associated discrepancy indicators and analyst context.</p><RegionWorldMap leads={signals} onSelect={(signal) => { setActiveSignalId(signal.id); setRegionScope(signal.region); setActiveTab("signals"); }} /></article>
+          <article className="overview-panel signal-family-overview"><div className="overview-panel-head"><div><p className="eyebrow">SCREENING TAXONOMY <span>/</span> NOT FINDINGS</p><h2>Signal families</h2></div><Activity size={19} /></div><p className="overview-panel-copy">Expand a category to understand what was flagged, the limits of that signal, and the related example lead.</p><div className="family-list">{signalGroups.map(({ type, count }, index) => { const signal = signals.find((candidate) => candidate.type === type); return <details className="family-disclosure" key={type}><summary className="family-summary"><span className={`family-index family-${index}`}>0{index + 1}</span><span className="family-summary-name">{type}<small>{count.toString().padStart(2, "0")} illustrative lead</small></span><ChevronDown size={14} /></summary>{signal && <div className="family-explanation"><p>{signal.description}</p><p className="family-caveat">{signal.why}</p><button type="button" onClick={() => { setActiveSignalId(signal.id); setRegionScope(signal.region); setSignalType(type); setActiveTab("signals"); }}>Open related signal <ArrowRight size={13} /></button></div>}</details>; })}</div><button className="text-action overview-action" type="button" onClick={() => { setSignalType("All signals"); setRegionScope("All regions"); setActiveTab("signals"); }}>Open screening queue <ArrowRight size={14} /></button></article>
+        </section>
+      </>}
 
-          <section className="filter-bar">
-            <div className="filter-label"><Filter size={15} /><span>FILTERS</span></div>
-            <label className="range-filter">Minimum priority <strong>{minimumPriority}</strong><input type="range" min="0" max="100" step="5" value={minimumPriority} onChange={(event) => setMinimumPriority(Number(event.target.value))} /></label>
-            <label className="select-filter">Tier depth <span className="select-wrap"><select value={maximumTier} onChange={(event) => setMaximumTier(Number(event.target.value))}><option value="0">Tier 0</option><option value="1">Through 1</option><option value="2">Through 2</option><option value="3">Through 3</option></select><ChevronDown size={13} /></span></label>
-            <label className="select-filter">Evidence basis <span className="select-wrap"><select value={basisFilter} onChange={(event) => setBasisFilter(event.target.value)}><option value="all">All bases</option><option value="document_stated">Document stated</option><option value="registry">Registry</option><option value="web_inferred">Web inferred</option></select><ChevronDown size={13} /></span></label>
-            <label className="select-filter">Link type <span className="select-wrap"><select value={edgeTypeFilter} onChange={(event) => setEdgeTypeFilter(event.target.value)}><option value="all">All types</option>{edgeTypes.map((type) => <option key={type} value={type}>{type.replaceAll("_", " ")}</option>)}</select><ChevronDown size={13} /></span></label>
-          </section>
+      {activeTab === "signals" && <section className="signal-workspace" id="signals"><div className="signal-column"><div className="section-title-row"><div><p className="eyebrow">01 <span>/</span> SCREENING QUEUE</p><h2>Patterns for human review</h2></div><span className="lead-total">{filteredSignals.length.toString().padStart(2, "0")} LEADS</span></div><div className="filter-rack"><label className="search-control"><Search size={16} /><input type="search" placeholder="Search product, zone, code…" value={search} onChange={(event) => setSearch(event.target.value)} /></label><label className="filter-control"><Filter size={14} /><select aria-label="Filter by signal type" value={signalType} onChange={(event) => setSignalType(event.target.value)}><option>All signals</option>{[...new Set(signals.map((signal) => signal.type))].map((type) => <option key={type}>{type}</option>)}</select><ChevronDown size={12} /></label><label className="filter-control"><SlidersHorizontal size={14} /><select aria-label="Filter by priority" value={severity} onChange={(event) => setSeverity(event.target.value)}><option>All priorities</option><option>Elevated</option><option>Review</option><option>Watch</option></select><ChevronDown size={12} /></label></div><div className="queue-head"><span>LEAD / PRODUCT</span><span>PERIOD</span><span>REVIEW PRIORITY</span></div>{signalQueue(filteredSignals)}<div className="queue-foot"><span><i className="legend-dot high" /> Elevated <i className="legend-dot medium" /> Review <i className="legend-dot low" /> Watch</span><span>Priority is triage, not probability of wrongdoing.</span></div></div>{signalDetail(activeSignal)}</section>}
 
-          <section className="content-grid">
-            <div className="main-column">
-              <div className="section-heading"><div><span className="section-index">01</span><h2>Relationship map</h2></div><span className="layout-note">SEED <i /> UPSTREAM TIERS</span></div>
-              <GraphView
-                elements={[
-                  ...visibleNodes.map(({ data }) => ({ data: { ...data, sanctioned: data.risk_flags.some((flag) => String(flag).toLowerCase().includes("sanction")) } })),
-                  ...visibleEdges.map(({ data }) => ({ data })),
-                ]}
-                onEntitySelect={(id) => { void selectEntity(id); }}
-                onEdgeSelect={(edge) => { setSelectedEntity(null); setSelectedEdge(edge as unknown as GraphEdge); }}
-                onExport={exportRanked}
-              />
-              <div className="legend-row">
-                <span><i className="legend-line stated" /> Document stated</span>
-                <span><i className="legend-line registry" /> Registry</span>
-                <span><i className="legend-line inferred" /> Web-inferred lead</span>
-                <span className="legend-note">Link opacity reflects confidence</span>
-              </div>
+      {activeTab === "flows" && <section className="tab-page"><div className="section-title-row"><div><p className="eyebrow">02 <span>/</span> TRADE FLOWS</p><h2>Compare reported patterns—not individual cargo</h2></div><span className="data-chip">AGGREGATE PUBLIC DATA</span></div><div className="flow-page-grid"><article className="visual-card"><div className="visual-card-head"><div><p className="eyebrow">TIME SERIES <span>/</span> INDEXED</p><h2>Product group trend</h2></div><span className="chart-legend"><i /> Synthetic example</span></div><TradePulseChart /><p className="visual-footnote">A real implementation would chart sourced public statistics by product, partner, reporter, and period, subject to available fields.</p></article><article className="visual-card"><div className="visual-card-head"><div><p className="eyebrow">PRODUCT GROUPS</p><h2>Compare screening leads</h2></div></div><ProductBars /><p className="visual-footnote">Illustrative index; never interpret as official volumes or a finding.</p></article><article className="visual-card flow-wide"><div className="visual-card-head"><div><p className="eyebrow">PUBLIC DATA CROSS-CHECK</p><h2>Reporter, product, partner</h2></div></div><FlowDiagram /></article></div></section>}
 
-              <div className="section-heading table-heading"><div><span className="section-index">02</span><h2>Priority queue</h2></div><span className="table-count">{rankedNodes.length} ENTITIES</span></div>
-              <div className="table-wrap">
-                <table>
-                  <thead><tr><th>ENTITY</th><th>TYPE</th><th>COUNTRY</th><th>TIER</th><th>PRIORITY</th><th>RESOLUTION</th><th /></tr></thead>
-                  <tbody>{rankedNodes.map(({ data }) => <tr key={data.id} onClick={() => { void selectEntity(data.id); }}>
-                    <td><span className={`entity-dot ${data.is_seed ? "seed" : ""}`} /><strong>{data.label}</strong>{data.is_seed && <span className="seed-tag">SOURCE</span>}</td>
-                    <td>{data.entity_type}</td><td>{data.country || "—"}</td><td>{data.tier}</td>
-                    <td><div className="score-cell"><span className="score-track"><i style={{ width: `${data.priority_score}%` }} /></span><b>{Math.round(data.priority_score)}</b></div></td>
-                    <td><span className={`resolution-pill ${data.resolution_status}`}>{data.resolution_status}</span></td>
-                    <td><Search size={14} className="row-search" /></td>
-                  </tr>)}</tbody>
-                </table>
-                {rankedNodes.length === 0 && <div className="filter-empty">No entities match these filters.</div>}
-              </div>
-            </div>
+      {activeTab === "saved" && <section className="tab-page"><div className="section-title-row"><div><p className="eyebrow">03 <span>/</span> WORKING FILE</p><h2>Saved review leads</h2></div><span className="lead-total">{savedSignals.length.toString().padStart(2, "0")} SAVED</span></div>{savedSignals.length ? <div className="saved-grid">{savedSignals.map((signal) => <button className="saved-card" key={signal.id} type="button" onClick={() => { setActiveSignalId(signal.id); setActiveTab("signals"); }}><span className="saved-card-top"><SeverityPill severity={signal.severity} /><span>{signal.id}</span></span><b>{signal.title}</b><span>{signal.product} · {signal.code}</span><ScoreBar score={signal.score} /><small>{signal.zone} · {signal.period}</small></button>)}</div> : <div className="saved-empty"><Bookmark size={24} /><h3>Your working file is empty</h3><p>Open a lead in Signals and choose “Save lead” to keep it here for this session.</p><button type="button" onClick={() => setActiveTab("signals")}>Browse signals <ArrowRight size={14} /></button></div>}</section>}
 
-            <aside className={`detail-panel ${selectedEntity || selectedEdge ? "has-selection" : ""}`}>
-              {selectedEntity ? <EntityPanel entity={selectedEntity} onClose={() => setSelectedEntity(null)} />
-                : selectedEdge ? <EvidencePanel edge={selectedEdge} onClose={() => setSelectedEdge(null)} />
-                  : <div className="detail-empty"><div className="detail-mark"><Search size={19} /></div><p>Select a node or link to inspect its evidence.</p></div>}
-            </aside>
-          </section>
-        </>
-      )}
+      {activeTab === "sources" && <section className="tab-page source-page"><div className="section-title-row"><div><p className="eyebrow">04 <span>/</span> DATA &amp; METHOD</p><h2>Know what each layer can support</h2></div><span className="data-chip">GLOBAL FRAME · LOCAL RULES</span></div><div className="coverage-note"><Globe2 size={19} /><div><b>Global trade comparisons, uneven zone-level coverage</b><p>ITC Trade Map supports broad reporter, partner, product, and period comparisons across many markets. It does not identify individual FTZ lots. Census FTZ statistics and USITC DataWeb are U.S.-specific; other jurisdictions require their own official data sources, definitions, and access checks.</p></div></div><div className="source-register">{sourceLinks.map((source) => <a className="register-item" key={source.label} href={source.href} target="_blank" rel="noreferrer"><span className="register-check"><Check size={13} /></span><span className="register-name">{source.label}<small>{source.status} · official external source</small></span><ExternalLink size={14} /></a>)}<div className="register-item future-source"><span className="register-pending"><Clock3 size={13} /></span><span className="register-name">Sayari<small>Planned provider · access and API not configured</small></span><span className="pending-tag">NOT CONNECTED</span></div></div><div className="method-grid"><article><span className="method-number">01</span><h3>Public screening</h3><p>Use public aggregate trade data for product, partner, reporter, and time comparisons where fields are available. Show source, release date, unit, and jurisdiction coverage on each view.</p></article><article><span className="method-number">02</span><h3>Review signal</h3><p>Explain why a pattern was surfaced, what benign explanations may apply, and what evidence is missing. Scores order analyst attention only.</p></article><article><span className="method-number">03</span><h3>Confirm locally</h3><p>Zone records, FTZ definitions, and access rights differ by jurisdiction. Case-level admission, inventory, processing, withdrawal, and entry records require local authority and authorization.</p></article></div><div className="scope-note"><Gauge size={16} /><p><b>Evidence discipline</b> Public trade changes can prioritize review. Confirming movement, inventory discrepancies, origin, trafficking, money laundering, or labor abuse requires relevant records and independent corroboration. The system makes no automated findings.</p><a href="https://www.ecfr.gov/current/title-19/chapter-I/part-146" target="_blank" rel="noreferrer">U.S. FTZ recordkeeping rule <ArrowUpRight size={13} /></a></div></section>}
 
-      <footer className="app-footer"><span>SourceSight <b>·</b> Local research workspace</span><span>Evidence first <b>·</b> Inference clearly labeled</span></footer>
+      <footer className="desk-footer"><span>Meridian <i>·</i> Global trade observatory</span><span>Illustrative interface <i>·</i> fictional data <i>·</i> human review only</span></footer>
     </main>
   );
-}
-
-function EntityPanel({ entity, onClose }: { entity: EntityDetails; onClose: () => void }) {
-  return <>
-    <div className="panel-header"><div><span className="eyebrow">ENTITY RECORD · TIER {entity.tier}</span><h3>{entity.canonical_name}</h3></div><button className="icon-button" type="button" onClick={onClose} title="Close details" aria-label="Close details"><X size={16} /></button></div>
-    <div className="entity-meta"><span>{entity.entity_type}</span>{entity.country && <span>{entity.country}</span>}<span>{entity.resolution_status}</span></div>
-    <div className="priority-block"><span>REVIEW PRIORITY</span><strong>{Math.round(entity.priority_score)}<small>/100</small></strong></div>
-    <h4>Score factors</h4>
-    <div className="factor-list">{Object.entries(entity.score_factors).map(([name, value]) => <div key={name}><span>{name.replaceAll("_", " ")}</span><b>{value}</b></div>)}</div>
-    <h4>Evidence <span className="evidence-count">{entity.evidence.length}</span></h4>
-    <EvidenceList items={entity.evidence} />
-  </>;
-}
-
-function EvidencePanel({ edge, onClose }: { edge: GraphEdge; onClose: () => void }) {
-  return <>
-    <div className="panel-header"><div><span className="eyebrow">RELATIONSHIP · {edge.basis.replaceAll("_", " ")}</span><h3>{edge.label}</h3></div><button className="icon-button" type="button" onClick={onClose} title="Close evidence" aria-label="Close evidence"><X size={16} /></button></div>
-    <div className="edge-confidence"><span>CONFIDENCE</span><strong>{Math.round(edge.confidence * 100)}%</strong></div>
-    <div className="lead-label"><AlertTriangle size={14} />{edge.basis === "web_inferred" ? "Unverified web lead" : "Source-supported relationship"}</div>
-    <h4>Supporting evidence <span className="evidence-count">{edge.evidence.length}</span></h4>
-    <EvidenceList items={edge.evidence} />
-  </>;
-}
-
-function EvidenceList({ items }: { items: Evidence[] }) {
-  if (!items.length) return <p className="no-evidence">No evidence records are available.</p>;
-  return <div className="evidence-list">{items.map((item) => <article className="evidence-item" key={item.id}>
-    <div className="evidence-provider"><span>{item.provider}</span>{item.retrieved_at && <time>{new Date(item.retrieved_at).toLocaleDateString()}</time>}</div>
-    <blockquote>{item.snippet}</blockquote>
-    {item.source_ref.startsWith("http") ? <a href={item.source_ref} target="_blank" rel="noreferrer">Open source <ArrowDownToLine size={12} /></a> : <span className="source-ref">{item.source_ref}</span>}
-  </article>)}</div>;
 }
