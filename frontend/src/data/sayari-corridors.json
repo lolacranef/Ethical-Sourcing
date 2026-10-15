@@ -1,0 +1,98 @@
+{
+  "source": "Sayari Graph trade search facets (bills of lading and customs records), retrieved via the Sayari MCP connector",
+  "generatedAt": "2026-10-15",
+  "note": "Aggregate counts only. Facet counts cover every record Sayari holds for the corridor; date filters are not applied to facet aggregates, so the coverage window is the earliest and latest record date. Supplier risk counts are distinct supplier entities carrying at least one flag in the category; a supplier can carry several categories.",
+  "riskLabels": {
+    "forced_labor": "Forced labor",
+    "environmental_risk": "Environmental",
+    "political_exposure": "Political exposure / SOE",
+    "regulatory_action": "Regulatory action",
+    "shell_company_risk": "Shell-company indicators",
+    "export_controls": "Export controls",
+    "sanctions": "Sanctions",
+    "adverse_media": "Adverse media"
+  },
+  "flagLabels": {
+    "exports_ilab_forced_labor": "Exported goods on the U.S. DOL (ILAB) forced-labor list for this origin",
+    "exports_ilab_child_labor": "Exported goods on the U.S. DOL (ILAB) child-labor list for this origin",
+    "forced_labor_sheffield_hallam_university_reports_origin_subtier": "Tier-2/3 supplier named in Sheffield Hallam forced-labor reports",
+    "forced_labor_uflpa_origin_subtier": "Tier-2/3 supplier on the UFLPA Entity List",
+    "forced_labor_xinjiang_origin_subtier": "Tier-2/3 supplier possibly based in Xinjiang",
+    "exports_eudr_shipment_wood": "Exports wood from a country rated high-risk for deforestation (EUDR)",
+    "soe_adjacent": "One hop from a state-owned enterprise",
+    "regulatory_action": "Listed in a regulatory enforcement action",
+    "mass_address_usage": "Registered at an address shared by more than 1,000 entities",
+    "law_enforcement_action": "Named in law-enforcement action (adverse media)"
+  },
+  "products": {
+    "solar": {
+      "corridor": { "from": "IDN", "to": "USA", "hs": "854143" },
+      "shipments": 9209,
+      "coverage": { "earliest": "2022-08-20", "latest": "2026-09-22" },
+      "suppliers": 148,
+      "topSupplierShipments": [1333, 1126, 720, 607, 436],
+      "supplierRisk": { "forced_labor": 92, "environmental_risk": 73, "political_exposure": 18, "export_controls": 8, "sanctions": 6, "regulatory_action": 5, "shell_company_risk": 2, "adverse_media": 0 },
+      "topFlags": [["exports_ilab_child_labor", 60], ["exports_ilab_forced_labor", 54], ["forced_labor_sheffield_hallam_university_reports_origin_subtier", 40]]
+    },
+    "aluminum": {
+      "corridor": { "from": "CAN", "to": "USA", "hs": "7601" },
+      "shipments": 666,
+      "coverage": { "earliest": "2021-08-05", "latest": "2026-08-26" },
+      "suppliers": 115,
+      "topSupplierShipments": [62, 47, 46, 43, 42],
+      "supplierRisk": { "shell_company_risk": 12, "forced_labor": 11, "regulatory_action": 8, "political_exposure": 7, "adverse_media": 5, "environmental_risk": 2, "export_controls": 1, "sanctions": 0 },
+      "topFlags": [["soe_adjacent", 15], ["mass_address_usage", 9], ["regulatory_action", 5]]
+    },
+    "cotton": {
+      "corridor": { "from": "IND", "to": "USA", "hs": "610910" },
+      "shipments": 209706,
+      "coverage": { "earliest": "2019-09-18", "latest": "2026-09-22" },
+      "suppliers": 2625,
+      "topSupplierShipments": [12269, 12105, 6714, 5268, 4561],
+      "supplierRisk": { "forced_labor": 2292, "environmental_risk": 466, "shell_company_risk": 67, "political_exposure": 53, "regulatory_action": 48, "export_controls": 23, "adverse_media": 12, "sanctions": 5 },
+      "topFlags": [["exports_ilab_child_labor", 2276], ["exports_ilab_forced_labor", 2270], ["forced_labor_sheffield_hallam_university_reports_origin_subtier", 368], ["forced_labor_uflpa_origin_subtier", 237]]
+    },
+    "seafood": {
+      "corridor": { "from": "IND", "to": "USA", "hs": "030617" },
+      "shipments": 96109,
+      "coverage": { "earliest": "2021-08-19", "latest": "2026-09-22" },
+      "suppliers": 219,
+      "topSupplierShipments": [7600, 5715, 5166, 4560, 3357],
+      "supplierRisk": { "forced_labor": 50, "environmental_risk": 22, "political_exposure": 18, "regulatory_action": 3, "shell_company_risk": 2, "export_controls": 1, "adverse_media": 1, "sanctions": 1 },
+      "topFlags": [["exports_ilab_forced_labor", 20], ["exports_ilab_child_labor", 19], ["forced_labor_xinjiang_origin_subtier", 14], ["soe_adjacent", 19]]
+    },
+    "honey": {
+      "corridor": { "from": "IND", "to": "USA", "hs": "0409" },
+      "shipments": 8578,
+      "coverage": { "earliest": "2021-08-05", "latest": "2026-09-20" },
+      "suppliers": 122,
+      "topSupplierShipments": [1863, 980, 936, 778, 527],
+      "supplierRisk": { "forced_labor": 56, "environmental_risk": 39, "shell_company_risk": 5, "political_exposure": 4, "regulatory_action": 3, "adverse_media": 2, "sanctions": 1, "export_controls": 0 },
+      "topFlags": [["exports_ilab_forced_labor", 54], ["exports_ilab_child_labor", 43], ["exports_eudr_shipment_wood", 38]]
+    },
+    "gold": {
+      "corridor": { "from": "CHE", "to": "USA", "hs": "7108" },
+      "shipments": 0,
+      "suppliers": 0,
+      "coverageGap": "Sayari holds no shipment records for this corridor. Refined gold usually moves by air freight and secure courier, which bill-of-lading data does not capture."
+    },
+    "tin": {
+      "corridor": { "from": "BOL", "to": "USA", "hs": "8001" },
+      "shipments": 68,
+      "coverage": { "earliest": "2024-06-05", "latest": "2024-12-29" },
+      "suppliers": 2,
+      "topSupplierShipments": [51, 17],
+      "supplierRisk": { "forced_labor": 2, "adverse_media": 1, "regulatory_action": 1, "political_exposure": 0, "environmental_risk": 0, "shell_company_risk": 0, "export_controls": 0, "sanctions": 0 },
+      "topFlags": [["exports_ilab_child_labor", 2], ["regulatory_action", 1], ["soe_adjacent", 1]]
+    },
+    "timber": {
+      "corridor": { "from": "BRA", "to": "USA", "hs": "440729" },
+      "shipments": 832,
+      "coverage": { "earliest": "2021-08-21", "latest": "2026-08-31" },
+      "suppliers": 99,
+      "topSupplierShipments": [313, 58, 50, 39, 20],
+      "supplierRisk": { "environmental_risk": 47, "forced_labor": 4, "adverse_media": 3, "regulatory_action": 3, "political_exposure": 1, "shell_company_risk": 1, "export_controls": 0, "sanctions": 0 },
+      "topFlags": [["exports_eudr_shipment_wood", 43], ["soe_adjacent", 7], ["law_enforcement_action", 3], ["exports_ilab_forced_labor", 3]]
+    }
+  }
+}

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Database, ExternalLink, Flag, History, TriangleAlert } from "lucide-react";
+import { ArrowRight, Database, ExternalLink, Flag, History, Newspaper, Network, TriangleAlert } from "lucide-react";
 import comtrade from "./data/comtrade-mirror.json";
+import sayari from "./data/sayari-corridors.json";
+import tavily from "./data/tavily-developments.json";
 
 type Indication = "forced-labor" | "duty-evasion" | "tbml" | "conflict" | "illegal-harvest";
 type Band = "Elevated" | "Review" | "Watch";
@@ -77,7 +79,23 @@ const products: Product[] = [
   },
 ];
 
+type Corridor = {
+  corridor: { from: string; to: string; hs: string };
+  shipments: number;
+  suppliers: number;
+  coverage?: { earliest: string; latest: string };
+  topSupplierShipments?: number[];
+  supplierRisk?: Record<string, number>;
+  topFlags?: [string, number][];
+  coverageGap?: string;
+};
+type Development = { date: string; title: string; outlet: string; url: string; kind: string; summary: string };
+
 const mirrorData = comtrade.products as Record<string, MirrorSeries>;
+const corridorData = sayari.products as unknown as Record<string, Corridor>;
+const riskLabels = sayari.riskLabels as Record<string, string>;
+const flagLabels = sayari.flagLabels as Record<string, string>;
+const developments = tavily.products as Record<string, Development[]>;
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const monthLabel = (period: string) => `${monthNames[Number(period.slice(5)) - 1]} ’${period.slice(2, 4)}`;
 const formatUsd = (value: number | null) => value === null ? "Not reported" : value >= 1e9 ? `$${(value / 1e9).toFixed(2)}B` : `$${(value / 1e6).toFixed(1)}M`;
@@ -170,7 +188,7 @@ function GapChart({ points, hover, onHover, width }: { points: Point[]; hover: n
   const pointerIndex = (clientX: number, rect: DOMRect) => Math.max(0, Math.min(points.length - 1, Math.floor((((clientX - rect.left) / rect.width) * width - left) / slot)));
   return <svg className="gap-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`Mirror gap by month, with review thresholds at plus and minus ${GAP_THRESHOLD}%`}
     onPointerMove={(event) => onHover(pointerIndex(event.clientX, event.currentTarget.getBoundingClientRect()))} onPointerLeave={() => onHover(null)}>
-    {[minGap, 0, maxGap].map((tick) => <g key={tick}><line className="chart-gridline" x1={left} x2={width - right} y1={y(tick)} y2={y(tick)} /><text className="axis-label" x={left - 7} y={y(tick) + 3} textAnchor="end">{tick > 0 ? "+" : ""}{tick}%</text></g>)}
+    {[minGap, 0, maxGap].map((tick) => <g key={tick}><line className="chart-gridline" x1={left} x2={width - right} y1={y(tick)} y2={y(tick)} /><text className="axis-label" x={left - 7} y={y(tick) + 3} textAnchor="end">{(tick === maxGap && gaps.some((gap) => gap > maxGap)) || (tick === minGap && gaps.some((gap) => gap < minGap)) ? "≥" : ""}{tick > 0 ? "+" : ""}{tick}%</text></g>)}
     {points.map((point, index) => { if (point.gap === null) return null;
       const end = y(point.gap), up = point.gap >= 0, length = Math.max(1, Math.abs(baseline - end)), radius = Math.min(4, length, barWidth / 2), bx = left + index * slot + 1;
       const d = up ? `M${bx} ${baseline}V${baseline - length + radius}q0 -${radius} ${radius} -${radius}h${barWidth - radius * 2}q${radius} 0 ${radius} ${radius}V${baseline}z`
@@ -180,6 +198,33 @@ function GapChart({ points, hover, onHover, width }: { points: Point[]; hover: n
     {!compact && <text className="direct-label" x={width - right + 8} y={y(GAP_THRESHOLD) + 3}>Review threshold ±{GAP_THRESHOLD}%</text>}
     {points.map((point, index) => index % (compact ? 6 : 3) === 0 && <text key={point.month} className="axis-label" x={left + index * slot + slot / 2} y={height - 7} textAnchor="middle">{point.month}</text>)}
   </svg>;
+}
+
+const formatCount = (value: number) => value.toLocaleString("en-US");
+const formatShare = (part: number, whole: number) => whole ? `${Math.round((part / whole) * 100)}%` : "—";
+const formatDate = (date: string) => new Date(`${date.length === 7 ? `${date}-01` : date}T12:00:00`).toLocaleDateString("en-US", date.length === 7 ? { month: "short", year: "numeric" } : { month: "short", day: "numeric", year: "numeric" });
+
+function CorridorPanel({ data, partner }: { data?: Corridor; partner: string }) {
+  if (!data) return <p className="intel-empty">No Sayari snapshot for this corridor yet.</p>;
+  if (data.coverageGap) return <p className="intel-empty">{data.coverageGap}</p>;
+  const topFive = (data.topSupplierShipments ?? []).reduce((sum, count) => sum + count, 0);
+  const risks = Object.entries(data.supplierRisk ?? {}).filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]);
+  const flags = [...(data.topFlags ?? [])].sort((a, b) => b[1] - a[1]);
+  return <>
+    <div className="intel-stats">
+      <div><span className="metric-label">SHIPMENT RECORDS</span><strong>{formatCount(data.shipments)}</strong><small>{partner} → U.S., HS {data.corridor.hs}</small></div>
+      <div><span className="metric-label">EXPORTING SUPPLIERS</span><strong>{formatCount(data.suppliers)}</strong><small>Distinct shipper entities</small></div>
+      <div><span className="metric-label">TOP-5 SUPPLIER SHARE</span><strong>{formatShare(topFive, data.shipments)}</strong><small>Of shipment records</small></div>
+      <div><span className="metric-label">RECORDS COVER</span><strong className="intel-dates">{data.coverage ? `${formatDate(data.coverage.earliest)} – ${formatDate(data.coverage.latest)}` : "—"}</strong><small>Earliest to latest record</small></div>
+    </div>
+    <h3>Suppliers carrying a Sayari risk flag, by category</h3>
+    <div className="risk-bars" role="list">{risks.map(([key, count]) => <div className="risk-bar-row" role="listitem" key={key} title={`${formatCount(count)} of ${formatCount(data.suppliers)} suppliers`}>
+      <span className="risk-bar-label">{riskLabels[key] ?? key}</span>
+      <span className="risk-bar-track"><i style={{ width: `${Math.max(1, (count / data.suppliers) * 100)}%` }} /></span>
+      <span className="risk-bar-value">{formatShare(count, data.suppliers)} <small>({formatCount(count)})</small></span>
+    </div>)}</div>
+    {flags.length > 0 && <><h3>Most common specific flags</h3><ul className="flag-list">{flags.map(([key, count]) => <li key={key}><b>{formatCount(count)}</b>{flagLabels[key] ?? key}</li>)}</ul></>}
+  </>;
 }
 
 export default function ProductWatch({ onOpenSignal }: { onOpenSignal: (code: string) => void }) {
@@ -199,6 +244,7 @@ export default function ProductWatch({ onOpenSignal }: { onOpenSignal: (code: st
   const peak = withGap.reduce((best, point) => Math.abs(point.gap!) > Math.abs(best.gap!) ? point : best, withGap[0]);
   const latest = withGap[withGap.length - 1];
   const last = points[points.length - 1], yearAgo = points[points.length - 13];
+  const medianGap = [...withGap.map((point) => Math.abs(point.gap!))].sort((a, b) => a - b)[Math.floor(withGap.length / 2)] ?? 0;
   const yearChange = last.reported && yearAgo?.reported ? Math.round(((last.reported - yearAgo.reported) / yearAgo.reported) * 1000) / 10 : null;
   const labels: [string, string] = ["U.S.-reported imports", `${series.partner.name}-reported exports`];
   const hovered = hover !== null ? points[hover] : null;
@@ -246,6 +292,7 @@ export default function ProductWatch({ onOpenSignal }: { onOpenSignal: (code: st
           </div>
           <h3 className="gap-title">Mirror gap by month <small>(U.S. imports ÷ partner exports − 1 · dashed lines = ±{GAP_THRESHOLD}% review threshold)</small></h3>
           <GapChart points={points} hover={hover} onHover={setHover} width={chartWidth} />
+          {points.some((point) => point.gap !== null && Math.abs(point.gap) > 200) && <p className="gap-cap-note">Bars are capped at the axis limit; hover a month or open the table for exact gaps.{medianGap > 100 && ` A gap this large in most months usually means the two sides classify the goods differently or attribute them to different partners (for example, goods shipped through a third country’s port), so check classification and routing before reading it as an anomaly.`}</p>}
           <p className="visual-footnote">U.S. imports are valued at customs value and partner exports at FOB. Shipping time across month boundaries, re-exports, confidential trade, and classification differences all create gaps, so a flag is a reconciliation prompt, not a finding. Months a side did not report are left blank.</p>
           <details className="data-table-toggle"><summary>View data as a table</summary><div className="table-scroll"><table><thead><tr><th>Month</th><th>U.S. imports</th><th>{series.partner.name} exports</th><th>Gap</th><th>Flag</th></tr></thead><tbody>{points.map((point) => <tr key={point.month} className={point.flagged ? "flagged" : ""}><td>{point.month}</td><td>{formatUsd(point.reported)}</td><td>{formatUsd(point.mirror)}</td><td>{formatGap(point.gap)}</td><td>{point.flagged ? "Beyond threshold" : "—"}</td></tr>)}</tbody></table></div></details>
           <p className="data-provenance"><Database size={12} /> Source: UN Comtrade, HS {series.cmdCode}. Partner = largest supplier to the U.S. in {series.supplierRankYear}. Retrieved {generated}.</p>
@@ -257,10 +304,32 @@ export default function ProductWatch({ onOpenSignal }: { onOpenSignal: (code: st
           <h3>Public references</h3>
           <ul className="context-sources">{active.sources.map((source) => <li key={source.label}>{source.href ? <a href={source.href} target="_blank" rel="noreferrer">{source.label} <ExternalLink size={11} /></a> : source.label}</li>)}<li><a href="https://comtradeplus.un.org/" target="_blank" rel="noreferrer">UN Comtrade database <ExternalLink size={11} /></a></li></ul>
           <h3>What to check next</h3>
-          <ul className="context-checks"><li>Compare unit values against the product’s usual range</li><li>Look for new or growing third-country partners</li><li>Confirm origin documentation and applicable duty orders</li><li>Entity-level supply-chain links (planned: Sayari)</li></ul>
+          <ul className="context-checks"><li>Compare unit values against the product’s usual range</li><li>Look for new or growing third-country partners</li><li>Confirm origin documentation and applicable duty orders</li><li>Read the corridor intelligence below: supplier concentration, risk-flag exposure, and recent rulings</li></ul>
           {active.signalCode && <button type="button" className="text-action" onClick={() => onOpenSignal(active.signalCode!)}>Open related review lead <ArrowRight size={13} /></button>}
         </aside>
       </div>
+    </article>
+
+    <article className="corridor-intel visual-card" aria-labelledby="corridor-intel-heading">
+      <div className="visual-card-head"><div><p className="eyebrow">CORRIDOR INTELLIGENCE <span>/</span> {series.partner.name.toUpperCase()} → UNITED STATES</p><h2 id="corridor-intel-heading">Who ships it, and what changed</h2></div><span className="data-chip">SAYARI · TAVILY</span></div>
+      <div className="intel-grid">
+        <section className="intel-panel">
+          <p className="intel-source"><Network size={13} /> Sayari trade records <span>· aggregate, no entities named</span></p>
+          <CorridorPanel data={corridorData[active.id]} partner={series.partner.name} />
+          <p className="intel-caveat">Counts come from bills of lading and customs records in Sayari’s graph, so they cover what those sources capture, not all trade. A risk flag is an attribute of the supplier entity: it can reflect sub-tier links, a country-and-product listing such as the U.S. Labor Department lists, or activity in other products. It is a reason to ask for documentation, not a finding about these shipments.</p>
+        </section>
+        <section className="intel-panel">
+          <p className="intel-source"><Newspaper size={13} /> Recent developments <span>· Tavily web search</span></p>
+          {(developments[active.id] ?? []).length ? <ol className="development-list">{[...developments[active.id]].sort((a, b) => b.date.localeCompare(a.date)).map((item) => <li key={item.url + item.title}>
+            <span className="development-meta"><time dateTime={item.date}>{formatDate(item.date)}</time><i>{item.kind}</i></span>
+            <a href={item.url} target="_blank" rel="noreferrer">{item.title} <ExternalLink size={11} /></a>
+            <p>{item.summary}</p>
+            <small>{item.outlet}</small>
+          </li>)}</ol> : <p className="intel-empty">No recent developments captured for this product.</p>}
+          <p className="intel-caveat">Summaries are drawn from search snippets and link to the original. Confirm against the official notice before relying on a rate or date.</p>
+        </section>
+      </div>
+      <p className="data-provenance"><Database size={12} /> Sources: Sayari Graph trade facets, retrieved {formatDate(sayari.generatedAt)}; Tavily web search, retrieved {formatDate(tavily.generatedAt)}. Snapshots are refreshed by hand.</p>
     </article>
   </section>;
 }

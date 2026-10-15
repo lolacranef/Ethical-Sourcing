@@ -10,7 +10,7 @@ Zenith is a global trade observatory for ethical-sourcing and trade-compliance a
 |---|---|---|
 | Overview | Welcome briefing, world map of zone-linked leads, signal families | Fictional |
 | Signals | Screening queue with filters and a lead detail panel | Fictional |
-| Product watch | Eight products with a history of trade anomalies or enforcement, with monthly mirror-statistics charts (U.S. imports vs. partner-reported exports) | **Real** UN Comtrade data and public enforcement context |
+| Product watch | Eight products with a history of trade anomalies or enforcement, with monthly mirror-statistics charts (U.S. imports vs. partner-reported exports), plus corridor intelligence: supplier counts and risk-flag exposure, and recent rulings and enforcement news | **Real** UN Comtrade data, Sayari trade-record aggregates, Tavily web search, and public enforcement context |
 | Trade flows | Example reporter / product / partner comparisons | Synthetic |
 | Saved leads | Leads saved in the current session | Fictional |
 | Data & method | Source register and evidence-discipline notes | Real source links |
@@ -41,6 +41,8 @@ npm run build:pages     # type-checks and builds into ../docs
 
 Then commit and push `docs/` and `frontend/src/data/`.
 
+`sayari-corridors.json` and `tavily-developments.json` are snapshots pulled through the Sayari and Tavily MCP connectors (October 15, 2026). No fetch script exists for them yet, so update them by hand. Keep Sayari data aggregate and name no company. The method and caveats are in [CONCEPT.md §6a](CONCEPT.md#6a-corridor-intelligence-method).
+
 The fetch uses the keyless UN Comtrade preview API. It has a call quota, and the script waits out quota errors automatically, so a full refresh can take an hour or more. For each product, the partner is the largest supplier to the U.S. that reports monthly data.
 
 ## Investigation engine (backend, local only)
@@ -69,6 +71,7 @@ What it does:
 **Demo**
 
 - Review leads, map markers, and Trade flows charts are fictional or synthetic. Only Product watch uses real trade data.
+- Sayari facet counts span every record Sayari holds for a corridor, not just the charted months. Gold (Switzerland → U.S.) has no shipment records because it moves by air.
 - Product watch shows a product only once its data has been fetched. Some partners don't report monthly to Comtrade.
 - The reporting-period selector is visual only, and saved leads reset on reload.
 - No company is named. Country pairs describe public statistics and are not allegations.

@@ -76,8 +76,10 @@ The region selector filters the fictional leads. The reporting-period selector i
 | U.S. Census FTZ statistics, USITC DataWeb | Referenced | U.S. aggregate trade and FTZ context |
 | 19 CFR Part 146 | Referenced | U.S. FTZ recordkeeping rules |
 | DHS UFLPA, CBP EAPA, FATF, OECD, EU Conflict Minerals Regulation, Lacey Act | Referenced | Why a product is on watch |
-| **Sayari** | **Planned** | Entity resolution, ownership and control, trade relationships, and risk flags behind each lead |
-| Tavily + Claude | Backend only | Web discovery and document extraction in the investigation engine |
+| **Sayari** (trade facets) | **In use** (snapshot) | Product watch corridor intelligence: shipment-record and supplier counts, supplier concentration, and supplier risk-flag categories. Aggregates only, with no company named |
+| **Tavily** (web search) | **In use** (snapshot) | Product watch recent developments: trade-remedy rulings, tariff actions, and forced-labor enforcement, each linked to its source |
+| Sayari (entity graph) | Planned | Entity resolution, ownership and control behind case-level investigations |
+| Tavily + Claude | Backend | Web discovery and document extraction in the investigation engine |
 | Tradeverifyd | Stub | Optional future trade-verification provider |
 
 ---
@@ -88,15 +90,27 @@ The region selector filters the fictional leads. The reporting-period selector i
 frontend/                 React + Vite + TypeScript static app (the Zenith demo)
   src/App.tsx             Tabs, fictional leads, map, signal workflow
   src/ProductWatch.tsx    Product watch tab and charts (SVG, no chart library)
-  src/data/               Committed UN Comtrade snapshot (comtrade-mirror.json)
+  src/data/               Committed snapshots: UN Comtrade (comtrade-mirror.json), Sayari corridor
+                          facets (sayari-corridors.json), Tavily developments (tavily-developments.json)
   scripts/fetch-comtrade.mjs   Builds the snapshot; respects the API quota
 docs/                     Built site served by GitHub Pages (npm run build:pages)
 backend/                  FastAPI investigation engine (local only, not yet connected to Zenith)
 ```
 
-Trade data is fetched at build time and committed, so the published site stays static and needs no API keys.
+Trade data is fetched at build time and committed, so the published site stays static and needs no API keys. The Sayari and Tavily snapshots were pulled through their MCP connectors on October 15, 2026, and are refreshed by hand.
 
-### 6a. Investigation engine (backend)
+### 6a. Corridor intelligence method
+
+For each Product watch corridor (partner → U.S., same HS code as the Comtrade series), Zenith queries Sayari's trade search facets for shipment records and for suppliers. It stores only aggregates: record count, distinct supplier count, the top-five suppliers' share of records, the earliest and latest record dates, and the number of suppliers carrying each risk-flag category.
+
+- **Facet counts span all records Sayari holds.** Date filters are not applied to facet aggregates, so the panel shows a coverage window, not a 12-month figure.
+- **Risk flags describe supplier entities.** A flag can come from sub-tier links (UFLPA, Sheffield Hallam, Xinjiang), from a country-and-product listing (U.S. DOL ILAB lists), or from activity in other products. That is why honey suppliers can carry a wood-deforestation flag.
+- **Coverage gaps are shown, not hidden.** Gold from Switzerland returns no records because it moves by air and courier. Bolivian tin records end in December 2024.
+- **The transit-country facet is excluded.** Its counts track individual data sources, not routing, so it can't support a transshipment reading.
+
+Tavily items are chosen to favor official notices (Federal Register, USTR, CRS) and specialist trade-law or industry sources. Summaries are written from the search snippets.
+
+### 6b. Investigation engine (backend)
 
 The backend is the case-level layer that a Zenith lead will eventually hand off to. It runs locally and is not called by the current UI. It:
 
@@ -124,7 +138,7 @@ Providers share one interface (capabilities and reliability). When Sayari is imp
 ## 8. Roadmap
 
 1. **Complete Product watch coverage.** Finish fetching all eight products, then add unit-value checks (value ÷ quantity) and third-country route-shift detection.
-2. **Sayari integration.** Implement the provider against Sayari's verified API contract, then attach entity, ownership, and trade-relationship context to leads and products.
+2. **Sayari integration.** Corridor aggregates now ship as a snapshot. Next: a scripted refresh, month-by-month record counts to set against mirror gaps, and the backend provider for entity, ownership, and trade-relationship context in case work.
 3. **Connect the investigation engine.** Let a lead open a backend investigation, and bring the tiered evidence graph (`GraphView.tsx`, currently unused) back into the Zenith UI.
 4. **Real leads.** Replace fictional leads with signals generated from real data, keeping the same caveats.
 5. **ITC Trade Map imports.** Load account CSV exports for comparisons the Comtrade preview API can't cover.
