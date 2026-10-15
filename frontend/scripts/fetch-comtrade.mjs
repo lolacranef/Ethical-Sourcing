@@ -30,7 +30,8 @@ async function query(path, params) {
   const url = `${API}/${path}?${new URLSearchParams(params)}`;
   for (let attempt = 0; attempt < 8; attempt++) {
     await sleep(PAUSE_MS * (attempt + 1));
-    const response = await fetch(url);
+    const response = await fetch(url).catch((error) => { console.log(`  network error (${error.cause?.code ?? error.message}), retrying`); return null; });
+    if (!response) continue;
     if (response.status === 403 || response.status === 429) {
       const wait = Number(response.headers.get("retry-after") ?? 60) + 5;
       console.log(`  quota reached, waiting ${Math.ceil(wait / 60)} min`);

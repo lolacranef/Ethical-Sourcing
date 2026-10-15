@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-13T03:35:38.842Z",
+  "generatedAt": "2026-10-13T04:14:42.814Z",
   "source": "UN Comtrade (comtradeapi.un.org, public preview)",
   "reporter": "United States",
   "products": {
@@ -391,6 +391,661 @@
           "period": "2026-07",
           "reported": 26851840,
           "mirror": 35838100.55
+        }
+      ]
+    },
+    "seafood": {
+      "retrievedAt": "2026-10-13T03:35:38.842Z",
+      "cmdCode": "030617",
+      "partner": {
+        "code": 699,
+        "name": "India"
+      },
+      "supplierRankYear": "2025",
+      "months": [
+        {
+          "period": "2024-08",
+          "reported": 176398790,
+          "mirror": 180306531.744
+        },
+        {
+          "period": "2024-09",
+          "reported": 195550946,
+          "mirror": 165091326.217
+        },
+        {
+          "period": "2024-10",
+          "reported": 203274426,
+          "mirror": 181064041.856
+        },
+        {
+          "period": "2024-11",
+          "reported": 175573207,
+          "mirror": 170595815.476
+        },
+        {
+          "period": "2024-12",
+          "reported": 155093204,
+          "mirror": 181016801.993
+        },
+        {
+          "period": "2025-01",
+          "reported": 201198924,
+          "mirror": 138787456.267
+        },
+        {
+          "period": "2025-02",
+          "reported": 159351211,
+          "mirror": 137505132.108
+        },
+        {
+          "period": "2025-03",
+          "reported": 162579579,
+          "mirror": 175475923.802
+        },
+        {
+          "period": "2025-04",
+          "reported": 175710806,
+          "mirror": 151371393.165
+        },
+        {
+          "period": "2025-05",
+          "reported": 172419065,
+          "mirror": 213880240.255
+        },
+        {
+          "period": "2025-06",
+          "reported": 195081182,
+          "mirror": 171417386.84
+        },
+        {
+          "period": "2025-07",
+          "reported": 214896359,
+          "mirror": 177849713.206
+        },
+        {
+          "period": "2025-08",
+          "reported": 181624190,
+          "mirror": 108954527.655
+        },
+        {
+          "period": "2025-09",
+          "reported": 183856468,
+          "mirror": 108609044.22
+        },
+        {
+          "period": "2025-10",
+          "reported": 90877866,
+          "mirror": 133053400.297
+        },
+        {
+          "period": "2025-11",
+          "reported": 127310072,
+          "mirror": 139232005.215
+        },
+        {
+          "period": "2025-12",
+          "reported": 147927781,
+          "mirror": 107136066.592
+        },
+        {
+          "period": "2026-01",
+          "reported": 163148407,
+          "mirror": 84407596.036
+        },
+        {
+          "period": "2026-02",
+          "reported": 101363217,
+          "mirror": 80036065.816
+        },
+        {
+          "period": "2026-03",
+          "reported": 87250118,
+          "mirror": 138129233.644
+        },
+        {
+          "period": "2026-04",
+          "reported": 106364925,
+          "mirror": 139192537.359
+        },
+        {
+          "period": "2026-05",
+          "reported": 152959740,
+          "mirror": 174846336.548
+        },
+        {
+          "period": "2026-06",
+          "reported": 180950541,
+          "mirror": 184651143.858
+        },
+        {
+          "period": "2026-07",
+          "reported": 182596384,
+          "mirror": 190926529.702
+        }
+      ]
+    },
+    "honey": {
+      "retrievedAt": "2026-10-13T04:14:42.814Z",
+      "cmdCode": "0409",
+      "partner": {
+        "code": 699,
+        "name": "India"
+      },
+      "supplierRankYear": "2025",
+      "months": [
+        {
+          "period": "2024-08",
+          "reported": 13265625,
+          "mirror": 9833931.431
+        },
+        {
+          "period": "2024-09",
+          "reported": 12160136,
+          "mirror": 9608653.729
+        },
+        {
+          "period": "2024-10",
+          "reported": 12479517,
+          "mirror": 13922168.826
+        },
+        {
+          "period": "2024-11",
+          "reported": 16211689,
+          "mirror": 10882744.251
+        },
+        {
+          "period": "2024-12",
+          "reported": 10767584,
+          "mirror": 17668765.309
+        },
+        {
+          "period": "2025-01",
+          "reported": 17381872,
+          "mirror": 18154110.829
+        },
+        {
+          "period": "2025-02",
+          "reported": 17662108,
+          "mirror": 13095481.578
+        },
+        {
+          "period": "2025-03",
+          "reported": 19701709,
+          "mirror": 19647855.008
+        },
+        {
+          "period": "2025-04",
+          "reported": 15634869,
+          "mirror": 14035820.528
+        },
+        {
+          "period": "2025-05",
+          "reported": 18375300,
+          "mirror": 20958043.877
+        },
+        {
+          "period": "2025-06",
+          "reported": 16762582,
+          "mirror": 16064241.827
+        },
+        {
+          "period": "2025-07",
+          "reported": 18564053,
+          "mirror": 13275508.982
+        },
+        {
+          "period": "2025-08",
+          "reported": 16790745,
+          "mirror": 12255063.335
+        },
+        {
+          "period": "2025-09",
+          "reported": 19619425,
+          "mirror": 7876515.564
+        },
+        {
+          "period": "2025-10",
+          "reported": 4098436,
+          "mirror": 4915047.034
+        },
+        {
+          "period": "2025-11",
+          "reported": 6973253,
+          "mirror": 12875245.574
+        },
+        {
+          "period": "2025-12",
+          "reported": 8057165,
+          "mirror": 24762668.407
+        },
+        {
+          "period": "2026-01",
+          "reported": 16544508,
+          "mirror": 6120266.018
+        },
+        {
+          "period": "2026-02",
+          "reported": 16936553,
+          "mirror": 6993987.72
+        },
+        {
+          "period": "2026-03",
+          "reported": 5422870,
+          "mirror": 17651065.762
+        },
+        {
+          "period": "2026-04",
+          "reported": 7965490,
+          "mirror": 9757229.298
+        },
+        {
+          "period": "2026-05",
+          "reported": 17189600,
+          "mirror": 10634067.684
+        },
+        {
+          "period": "2026-06",
+          "reported": 11783236,
+          "mirror": 13777400.878
+        },
+        {
+          "period": "2026-07",
+          "reported": 13895402,
+          "mirror": 17750281.412
+        }
+      ]
+    },
+    "gold": {
+      "retrievedAt": "2026-10-13T04:14:42.814Z",
+      "cmdCode": "7108",
+      "partner": {
+        "code": 757,
+        "name": "Switzerland"
+      },
+      "supplierRankYear": "2025",
+      "months": [
+        {
+          "period": "2024-08",
+          "reported": 16261452,
+          "mirror": 271595740.129
+        },
+        {
+          "period": "2024-09",
+          "reported": 52753253,
+          "mirror": 1015575878.785
+        },
+        {
+          "period": "2024-10",
+          "reported": 111637901,
+          "mirror": 1228274771.346
+        },
+        {
+          "period": "2024-11",
+          "reported": 125877932,
+          "mirror": 982061265.161
+        },
+        {
+          "period": "2024-12",
+          "reported": 1230571858,
+          "mirror": 6230447840.491
+        },
+        {
+          "period": "2025-01",
+          "reported": 574788274,
+          "mirror": 17069936012.648
+        },
+        {
+          "period": "2025-02",
+          "reported": 98341757,
+          "mirror": 14444248451.926
+        },
+        {
+          "period": "2025-03",
+          "reported": 21987402,
+          "mirror": 10665466178.501
+        },
+        {
+          "period": "2025-04",
+          "reported": 124561456,
+          "mirror": 1420190676.086
+        },
+        {
+          "period": "2025-05",
+          "reported": 63205084,
+          "mirror": 240265495.011
+        },
+        {
+          "period": "2025-06",
+          "reported": 46322623,
+          "mirror": 255049439.416
+        },
+        {
+          "period": "2025-07",
+          "reported": 5802190478,
+          "mirror": 5860260964.591
+        },
+        {
+          "period": "2025-08",
+          "reported": 11090256,
+          "mirror": 296630748.429
+        },
+        {
+          "period": "2025-09",
+          "reported": 585019951,
+          "mirror": 821881814.009
+        },
+        {
+          "period": "2025-10",
+          "reported": 250017519,
+          "mirror": 869722446.238
+        },
+        {
+          "period": "2025-11",
+          "reported": 79733124,
+          "mirror": 612322967.424
+        },
+        {
+          "period": "2025-12",
+          "reported": 582165766,
+          "mirror": 1120121596.932
+        },
+        {
+          "period": "2026-01",
+          "reported": 199369337,
+          "mirror": 450604933.512
+        },
+        {
+          "period": "2026-02",
+          "reported": 108316681,
+          "mirror": 718519543.799
+        },
+        {
+          "period": "2026-03",
+          "reported": 191131185,
+          "mirror": 622708550.025
+        },
+        {
+          "period": "2026-04",
+          "reported": 106078771,
+          "mirror": 608949095.376
+        },
+        {
+          "period": "2026-05",
+          "reported": 94714653,
+          "mirror": 365033231.043
+        },
+        {
+          "period": "2026-06",
+          "reported": 45097270,
+          "mirror": 363977444.581
+        },
+        {
+          "period": "2026-07",
+          "reported": 329281858,
+          "mirror": 500542755.858
+        }
+      ]
+    },
+    "tin": {
+      "retrievedAt": "2026-10-13T04:14:42.814Z",
+      "cmdCode": "8001",
+      "partner": {
+        "code": 68,
+        "name": "Bolivia (Plurinational State of)"
+      },
+      "supplierRankYear": "2025",
+      "months": [
+        {
+          "period": "2024-08",
+          "reported": 39816676,
+          "mirror": 9582591.86
+        },
+        {
+          "period": "2024-09",
+          "reported": 11450073,
+          "mirror": 7051755.08
+        },
+        {
+          "period": "2024-10",
+          "reported": 29901387,
+          "mirror": 10885701.56
+        },
+        {
+          "period": "2024-11",
+          "reported": 20694658,
+          "mirror": 10768842.41
+        },
+        {
+          "period": "2024-12",
+          "reported": 25157765,
+          "mirror": 3588791.33
+        },
+        {
+          "period": "2025-01",
+          "reported": 21610298,
+          "mirror": 10719321.27
+        },
+        {
+          "period": "2025-02",
+          "reported": 29559212,
+          "mirror": 6391443.45
+        },
+        {
+          "period": "2025-03",
+          "reported": 21545450,
+          "mirror": 5681025.35
+        },
+        {
+          "period": "2025-04",
+          "reported": 12163197,
+          "mirror": 4278613.11
+        },
+        {
+          "period": "2025-05",
+          "reported": 10503067,
+          "mirror": 11112094.1
+        },
+        {
+          "period": "2025-06",
+          "reported": 6788558,
+          "mirror": 8023513.24
+        },
+        {
+          "period": "2025-07",
+          "reported": 18470622,
+          "mirror": 6606777.11
+        },
+        {
+          "period": "2025-08",
+          "reported": 33581801,
+          "mirror": 6704603.82
+        },
+        {
+          "period": "2025-09",
+          "reported": 28659998,
+          "mirror": 2590911.54
+        },
+        {
+          "period": "2025-10",
+          "reported": 14010762,
+          "mirror": 9744936.37
+        },
+        {
+          "period": "2025-11",
+          "reported": 33352563,
+          "mirror": 12584182.21
+        },
+        {
+          "period": "2025-12",
+          "reported": 13306495,
+          "mirror": 13581650.21
+        },
+        {
+          "period": "2026-01",
+          "reported": 43353400,
+          "mirror": 15818206.47
+        },
+        {
+          "period": "2026-02",
+          "reported": 22756865,
+          "mirror": 5867288.45
+        },
+        {
+          "period": "2026-03",
+          "reported": 14972713,
+          "mirror": 19502215.46
+        },
+        {
+          "period": "2026-04",
+          "reported": 18527381,
+          "mirror": 10892940.36
+        },
+        {
+          "period": "2026-05",
+          "reported": 13720813,
+          "mirror": 5502479.76
+        },
+        {
+          "period": "2026-06",
+          "reported": 36802878,
+          "mirror": 10781379.84
+        },
+        {
+          "period": "2026-07",
+          "reported": 18351712,
+          "mirror": 34047256.78
+        }
+      ]
+    },
+    "timber": {
+      "retrievedAt": "2026-10-13T04:14:42.814Z",
+      "cmdCode": "440729",
+      "partner": {
+        "code": 76,
+        "name": "Brazil"
+      },
+      "supplierRankYear": "2025",
+      "months": [
+        {
+          "period": "2024-08",
+          "reported": 7139268,
+          "mirror": 143229
+        },
+        {
+          "period": "2024-09",
+          "reported": 5191265,
+          "mirror": 543243
+        },
+        {
+          "period": "2024-10",
+          "reported": 3880874,
+          "mirror": 609003
+        },
+        {
+          "period": "2024-11",
+          "reported": 11209479,
+          "mirror": 659715
+        },
+        {
+          "period": "2024-12",
+          "reported": 2686400,
+          "mirror": 693586
+        },
+        {
+          "period": "2025-01",
+          "reported": 941401,
+          "mirror": 429651
+        },
+        {
+          "period": "2025-02",
+          "reported": 1318713,
+          "mirror": 512421
+        },
+        {
+          "period": "2025-03",
+          "reported": 3229177,
+          "mirror": 736807
+        },
+        {
+          "period": "2025-04",
+          "reported": 4420605,
+          "mirror": 1117258
+        },
+        {
+          "period": "2025-05",
+          "reported": 9280052,
+          "mirror": 1763864
+        },
+        {
+          "period": "2025-06",
+          "reported": 7961493,
+          "mirror": 1238741
+        },
+        {
+          "period": "2025-07",
+          "reported": 9667563,
+          "mirror": 1413994
+        },
+        {
+          "period": "2025-08",
+          "reported": 12227914,
+          "mirror": 892827
+        },
+        {
+          "period": "2025-09",
+          "reported": 11022455,
+          "mirror": 1765644
+        },
+        {
+          "period": "2025-10",
+          "reported": 25087055,
+          "mirror": 2247396
+        },
+        {
+          "period": "2025-11",
+          "reported": 19167653,
+          "mirror": 2839954
+        },
+        {
+          "period": "2025-12",
+          "reported": 17426321,
+          "mirror": 710236
+        },
+        {
+          "period": "2026-01",
+          "reported": 12035238,
+          "mirror": 1567749
+        },
+        {
+          "period": "2026-02",
+          "reported": 12759387,
+          "mirror": 867653
+        },
+        {
+          "period": "2026-03",
+          "reported": 12617109,
+          "mirror": 1296236
+        },
+        {
+          "period": "2026-04",
+          "reported": 9349798,
+          "mirror": 1403351
+        },
+        {
+          "period": "2026-05",
+          "reported": 10505881,
+          "mirror": 1667078
+        },
+        {
+          "period": "2026-06",
+          "reported": 10822780,
+          "mirror": 2521376
+        },
+        {
+          "period": "2026-07",
+          "reported": 12107463,
+          "mirror": 2988844
         }
       ]
     }
