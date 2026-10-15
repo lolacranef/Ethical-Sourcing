@@ -8,14 +8,14 @@ Zenith is a global trade observatory for ethical-sourcing and trade-compliance a
 
 | Tab | Contents | Data |
 |---|---|---|
-| Overview | Welcome briefing, world map of zone-linked leads, signal families | Fictional |
-| Signals | Screening queue with filters and a lead detail panel | Fictional |
-| Product watch | Eight products with a history of trade anomalies or enforcement, with monthly mirror-statistics charts (U.S. imports vs. partner-reported exports), plus corridor intelligence: supplier counts and risk-flag exposure, and recent rulings and enforcement news | **Real** UN Comtrade data, Sayari trade-record aggregates, Tavily web search, and public enforcement context |
+| Overview | Welcome briefing, world map of review leads by partner country, lead types | **Real**, generated from the data below |
+| Signals | Screening queue with filters and a lead detail panel showing each lead's score breakdown | **Real**, generated from the data below |
+| Product watch | Eight products with a history of trade anomalies or enforcement, with monthly mirror-statistics charts (U.S. imports vs. partner-reported exports) marked with ruling and tariff dates, plus corridor intelligence: supplier counts and risk-flag exposure, and recent rulings and enforcement news | **Real** UN Comtrade data, Sayari trade-record aggregates, Tavily web search, and public enforcement context |
 | Trade flows | Example reporter / product / partner comparisons | Synthetic |
-| Saved leads | Leads saved in the current session | Fictional |
+| Saved leads | Leads you saved, kept in this browser | Real |
 | Data & method | Source register and evidence-discipline notes | Real source links |
 
-Product watch flags a month when the mirror gap is beyond ±25%. A flag is a prompt to reconcile, not evidence of wrongdoing. See [CONCEPT.md §4a](CONCEPT.md#4a-product-watch-method) for the method and caveats.
+Product watch flags a month when the mirror gap is beyond ±25%. Each product becomes a review lead scored 0–100 from four visible parts: mirror gap, recency, supplier risk, and policy activity. The period selector (24, 12, 6, or 3 months) re-scores leads and redraws the charts. A flag or score is a prompt to reconcile, not evidence of wrongdoing. See [CONCEPT.md §4a](CONCEPT.md#4a-product-watch-method) and [§4b](CONCEPT.md#4b-lead-scoring) for the method and caveats.
 
 ## Run the demo locally
 
@@ -41,7 +41,18 @@ npm run build:pages     # type-checks and builds into ../docs
 
 Then commit and push `docs/` and `frontend/src/data/`.
 
-`sayari-corridors.json` and `tavily-developments.json` are snapshots pulled through the Sayari and Tavily MCP connectors (October 15, 2026). No fetch script exists for them yet, so update them by hand. Keep Sayari data aggregate and name no company. The method and caveats are in [CONCEPT.md §6a](CONCEPT.md#6a-corridor-intelligence-method).
+Sayari and Tavily data have their own refresh scripts. Both read keys from the environment or the repo-root `.env` (see `.env.example`):
+
+```sh
+npm run data:sayari   # needs SAYARI_CLIENT_ID and SAYARI_CLIENT_SECRET
+npm run data:tavily   # needs TAVILY_API_KEY; --days=N to look back N days
+```
+
+`data:sayari` rewrites `sayari-corridors.json` with aggregates only and keeps the existing record-date coverage, which the facets don't provide. It follows Sayari's published API docs but has not yet been run against the live API. If Sayari's facet response differs from the docs, it stops with an error naming the keys it found.
+
+`data:tavily` appends new results to `tavily-developments.json` marked `"reviewed": false`. The site hides them until someone checks the source, sets the date, kind, and summary, and deletes that line. Existing items are never changed.
+
+The current snapshots were pulled through the Sayari and Tavily MCP connectors on October 15, 2026. Keep Sayari data aggregate and name no company. The method and caveats are in [CONCEPT.md §6a](CONCEPT.md#6a-corridor-intelligence-method).
 
 The fetch uses the keyless UN Comtrade preview API. It has a call quota, and the script waits out quota errors automatically, so a full refresh can take an hour or more. For each product, the partner is the largest supplier to the U.S. that reports monthly data.
 
@@ -70,10 +81,11 @@ What it does:
 
 **Demo**
 
-- Review leads, map markers, and Trade flows charts are fictional or synthetic. Only Product watch uses real trade data.
+- Trade flows charts are synthetic. Leads, the map, and Product watch use real data.
+- Leads are scored per product corridor, not per company, shipment, or FTZ. Map markers sit on the partner country.
 - Sayari facet counts span every record Sayari holds for a corridor, not just the charted months. Gold (Switzerland → U.S.) has no shipment records because it moves by air.
 - Product watch shows a product only once its data has been fetched. Some partners don't report monthly to Comtrade.
-- The reporting-period selector is visual only, and saved leads reset on reload.
+- Saved leads live in this browser's storage only, so they don't sync between devices.
 - No company is named. Country pairs describe public statistics and are not allegations.
 
 **Backend**

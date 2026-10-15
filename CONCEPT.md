@@ -39,14 +39,14 @@ The demo is a static React app published on GitHub Pages. It has no login, no ba
 
 | Tab | What it shows | Data |
 |---|---|---|
-| **Overview** | Welcome briefing, headline counts, a world map of zone-linked review leads, and expandable signal families (value, routing, quantity, sourcing context) | Fictional |
-| **Signals** | Screening queue with search and filters (signal type, priority, region), plus a lead detail panel: what was flagged, analyst context, public-data context, and a placeholder for authorized record intake | Fictional |
-| **Product watch** | Eight products with a documented history of trade anomalies or enforcement, filterable by risk indication, with mirror-statistics trend charts | **Real** UN Comtrade data plus real public enforcement context |
+| **Overview** | Welcome briefing, headline counts, a world map of review leads on each corridor's partner country, and expandable lead types (mirror gap, supplier risk, policy change) | **Real**, generated from Product watch data |
+| **Signals** | Screening queue with search and filters (lead type, priority, region), plus a lead detail panel: score breakdown, what was flagged, analyst context, sources, a link into Product watch, and a placeholder for authorized record intake | **Real**, generated from Product watch data |
+| **Product watch** | Eight products with a documented history of trade anomalies or enforcement, filterable by risk indication, with mirror-statistics trend charts marked with ruling and tariff dates, plus Sayari and Tavily corridor intelligence | **Real** UN Comtrade, Sayari, and Tavily data plus public enforcement context |
 | **Trade flows** | How reporter, product, and partner comparisons work, with example charts | Synthetic |
-| **Saved leads** | Leads saved during the session (not persisted) | Fictional |
+| **Saved leads** | Leads you saved, kept in browser storage | Real |
 | **Data & method** | Source register, method (public screening → review signal → confirm locally), and evidence-discipline notes | Real source links |
 
-The region selector filters the fictional leads. The reporting-period selector is visual only.
+The region selector filters leads. The reporting-period selector (24, 12, 6, or 3 months) sets the window for the charts, product bands, and lead scores.
 
 ### 4a. Product watch method
 
@@ -61,9 +61,25 @@ The region selector filters the fictional leads. The reporting-period selector i
   - **Tropical sawn timber (HS 4407.29):** Lacey Act
 - **Mirror statistics.** For each product, the partner is the largest supplier to the United States in the last full year. Zenith compares what the U.S. reports importing from that partner with what the partner reports exporting to the U.S., month by month over 24 months. The comparison uses the UN Comtrade public API.
 - **Gap and flags.** Gap = U.S. imports ÷ partner exports − 1. A month is flagged when the gap is beyond **±25%**.
-- **Review band.** **Elevated** means 6 or more of 24 months are flagged, **Review** means 2–5, and **Watch** means 0–1. The band comes from the data, not from editorial judgment.
+- **Review band.** **Elevated** means at least a quarter of the months in the selected window are flagged, **Review** means at least one in twelve, and **Watch** means fewer. Over 24 months that is 6+, 2–5, and 0–1 flagged months. The band comes from the data, not from editorial judgment.
+- **Event markers.** Reviewed Tavily developments appear as diamonds on the month they fall in. Developments after the latest trade month are listed under the chart as not yet reflected in trade data.
 - **Caveats shown in the UI.** Valuation basis differs (U.S. customs value vs. partner FOB). Shipments cross month boundaries. Re-exports, confidential trade, and classification differences all create gaps. A flag is a reconciliation prompt, not evidence of wrongdoing.
 - **Coverage.** Products appear once their data has been fetched. Some partners don't report monthly data to Comtrade, so the script falls back to the next-largest supplier that does.
+
+### 4b. Lead scoring
+
+Each Product watch corridor becomes one review lead, recomputed whenever the period changes. The 0–100 score is the sum of four parts, and each part is shown with its reason in the lead panel:
+
+| Part | Max | Rule |
+|---|---|---|
+| Mirror gap | 40 | Share of months in the window with a gap beyond ±25%, × 40 |
+| Recency | 15 | 15 if the latest month is flagged, 8 if any of the last three are, else 0 |
+| Supplier risk | 25 | Share of Sayari suppliers with a forced-labor-category flag, × 25. Halved when fewer than 10 suppliers |
+| Policy activity | 20 | 10 per reviewed ruling or enforcement item dated since the window start, up to 20 |
+
+- **Bands.** Elevated means 75 or more, Review 45–74, Watch below 45.
+- **Lead type.** The type names the main driver. Trade-data signals come first: mirror gap if gap and recency reach 40% of their 55 points, then supplier risk if it reaches half its points. Policy change applies only when the data is quiet.
+- **Weights are judgment calls.** They order analyst attention, and the parts are shown so a reviewer can discount any of them. The score is never a probability of wrongdoing.
 
 ---
 
@@ -76,8 +92,8 @@ The region selector filters the fictional leads. The reporting-period selector i
 | U.S. Census FTZ statistics, USITC DataWeb | Referenced | U.S. aggregate trade and FTZ context |
 | 19 CFR Part 146 | Referenced | U.S. FTZ recordkeeping rules |
 | DHS UFLPA, CBP EAPA, FATF, OECD, EU Conflict Minerals Regulation, Lacey Act | Referenced | Why a product is on watch |
-| **Sayari** (trade facets) | **In use** (snapshot) | Product watch corridor intelligence: shipment-record and supplier counts, supplier concentration, and supplier risk-flag categories. Aggregates only, with no company named |
-| **Tavily** (web search) | **In use** (snapshot) | Product watch recent developments: trade-remedy rulings, tariff actions, and forced-labor enforcement, each linked to its source |
+| **Sayari** (trade facets) | **In use** (snapshot + `npm run data:sayari`) | Product watch corridor intelligence: shipment-record and supplier counts, supplier concentration, and supplier risk-flag categories. Aggregates only, with no company named |
+| **Tavily** (web search) | **In use** (snapshot + `npm run data:tavily`, human review before publish) | Product watch recent developments: trade-remedy rulings, tariff actions, and forced-labor enforcement, each linked to its source |
 | Sayari (entity graph) | Planned | Entity resolution, ownership and control behind case-level investigations |
 | Tavily + Claude | Backend | Web discovery and document extraction in the investigation engine |
 | Tradeverifyd | Stub | Optional future trade-verification provider |
@@ -92,12 +108,15 @@ frontend/                 React + Vite + TypeScript static app (the Zenith demo)
   src/ProductWatch.tsx    Product watch tab and charts (SVG, no chart library)
   src/data/               Committed snapshots: UN Comtrade (comtrade-mirror.json), Sayari corridor
                           facets (sayari-corridors.json), Tavily developments (tavily-developments.json)
-  scripts/fetch-comtrade.mjs   Builds the snapshot; respects the API quota
+  src/data.ts             Shared data layer: series, windows, events, lead scoring
+  scripts/fetch-comtrade.mjs   Builds the Comtrade snapshot; respects the API quota
+  scripts/fetch-sayari.mjs     Refreshes Sayari corridor aggregates (needs Sayari API credentials)
+  scripts/fetch-tavily.mjs     Appends new Tavily results for human review (needs a Tavily key)
 docs/                     Built site served by GitHub Pages (npm run build:pages)
 backend/                  FastAPI investigation engine (local only, not yet connected to Zenith)
 ```
 
-Trade data is fetched at build time and committed, so the published site stays static and needs no API keys. The Sayari and Tavily snapshots were pulled through their MCP connectors on October 15, 2026, and are refreshed by hand.
+Trade data is fetched at build time and committed, so the published site stays static and needs no API keys. The Sayari and Tavily snapshots were first pulled through their MCP connectors on October 15, 2026. They are refreshed with their scripts, and new Tavily items stay hidden until reviewed.
 
 ### 6a. Corridor intelligence method
 
@@ -138,9 +157,8 @@ Providers share one interface (capabilities and reliability). When Sayari is imp
 ## 8. Roadmap
 
 1. **Complete Product watch coverage.** Finish fetching all eight products, then add unit-value checks (value ÷ quantity) and third-country route-shift detection.
-2. **Sayari integration.** Corridor aggregates now ship as a snapshot. Next: a scripted refresh, month-by-month record counts to set against mirror gaps, and the backend provider for entity, ownership, and trade-relationship context in case work.
+2. **Sayari integration.** Corridor aggregates ship with a refresh script (to be verified against the live API). Next: month-by-month record counts to set against mirror gaps, and the backend provider for entity, ownership, and trade-relationship context in case work.
 3. **Connect the investigation engine.** Let a lead open a backend investigation, and bring the tiered evidence graph (`GraphView.tsx`, currently unused) back into the Zenith UI.
-4. **Real leads.** Replace fictional leads with signals generated from real data, keeping the same caveats.
-5. **ITC Trade Map imports.** Load account CSV exports for comparisons the Comtrade preview API can't cover.
-6. **Working period filter.** Make the reporting-period selector filter data, and persist saved leads.
-7. **Authorized record intake.** Access-controlled upload for case records, with jurisdiction-specific FTZ rules.
+4. **ITC Trade Map imports.** Load account CSV exports for comparisons the Comtrade preview API can't cover.
+5. **Real Trade flows.** Replace the synthetic Trade flows charts with sourced statistics.
+6. **Authorized record intake.** Access-controlled upload for case records, with jurisdiction-specific FTZ rules.
