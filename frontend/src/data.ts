@@ -30,6 +30,11 @@ export type Corridor = {
 export type Development = { date: string | null; title: string; outlet: string; url: string; kind: string; summary: string; reviewed?: boolean };
 
 export type ScoreComponent = { label: string; points: number; max: number; detail: string };
+export type LeadMetrics = {
+  monthsWithGap: number; flaggedMonths: number; flaggedAbove: number; flaggedBelow: number; medianGap: number | null; latestGap: number | null; latestMonth: string | null; flaggedLastThree: number;
+  suppliers: number | null; forcedLaborSuppliers: number | null; topFiveShare: number | null;
+  eventsInWindow: number; latestEvent: { title: string; date: string; kind: string } | null;
+};
 export type Lead = {
   id: string;
   productId: string;
@@ -44,6 +49,8 @@ export type Lead = {
   period: string;
   score: number;
   components: ScoreComponent[];
+  metrics: LeadMetrics;
+  plain: { summary: string; nextStep: string };
   change: string;
   severity: Band;
   description: string;
@@ -200,6 +207,7 @@ export function buildLead(product: Product, months: WindowMonths): Lead | null {
   const medianGap = median(withGap.map((point) => point.gap!));
   const direction = medianGap >= 0 ? `U.S.-recorded imports run above ${partner}’s reported exports` : `${partner} reports more exports than the U.S. records as imports`;
   const latestEvent = recentEvents[0];
+  let metrics: LeadMetrics;
 
   const title = type === "Mirror gap" ? `${direction}` : type === "Supplier risk" ? `Supplier base carries forced-labor exposure flags` : latestEvent?.title ?? "New trade-remedy or enforcement action";
   const description = [
@@ -218,6 +226,13 @@ export function buildLead(product: Product, months: WindowMonths): Lead | null {
     region: partnerPlaces[series.partner.name]?.region ?? "Other",
     coordinates: (() => { const place = partnerPlaces[series.partner.name]?.coordinates; return Array.isArray(place) ? place : place?.[product.id] ?? [0, 0]; })(),
     product: product.name, code: product.hs, period: `${points[0].month} – ${points.at(-1)!.month}`, score, components,
+    metrics: (metrics = {
+      monthsWithGap: withGap.length, flaggedMonths: flagged.length, flaggedAbove: flagged.filter((point) => point.gap! > 0).length, flaggedBelow: flagged.filter((point) => point.gap! < 0).length, medianGap: withGap.length ? Math.round(medianGap * 10) / 10 : null, latestGap: latest?.gap ?? null, latestMonth: latest?.month ?? null, flaggedLastThree: lastThree,
+      suppliers: corridor && corridor.suppliers ? corridor.suppliers : null, forcedLaborSuppliers: corridor && corridor.suppliers ? corridor.supplierRisk?.forced_labor ?? 0 : null,
+      topFiveShare: corridor?.topSupplierShipments && corridor.shipments ? Math.round((corridor.topSupplierShipments.reduce((sum, count) => sum + count, 0) / corridor.shipments) * 100) : null,
+      eventsInWindow: recentEvents.length, latestEvent: latestEvent ? { title: latestEvent.title, date: latestEvent.date!, kind: latestEvent.kind } : null,
+    }),
+    plain: plainLanguage(type, everyday[product.id] ?? product.name.toLowerCase(), partner, metrics, windowStart),
     change: latest ? `Latest gap ${formatGap(latest.gap)}` : "No recent gap data", severity, description, why,
     indicators: [
       `${flagged.length}/${withGap.length} months flagged`,
@@ -226,6 +241,41 @@ export function buildLead(product: Product, months: WindowMonths): Lead | null {
     ],
     publicData: ["UN Comtrade", ...(corridor && corridor.suppliers ? ["Sayari trade records"] : []), ...(recentEvents.length ? ["Tavily news"] : [])],
   };
+}
+
+const everyday: Record<string, string> = { solar: "solar modules", aluminum: "aluminum", cotton: "cotton T-shirts", seafood: "shrimp", honey: "honey", gold: "gold", tin: "tin", timber: "tropical timber" };
+
+// Everyday-language version of a lead, built from the same numbers as the score.
+function plainLanguage(type: Lead["type"], goods: string, partner: string, metrics: LeadMetrics, windowStart: string) {
+  const size = (gap: number) => gap >= 100 ? `about ${(1 + gap / 100).toFixed(1)} times what ${partner} reports shipping` : gap >= 0 ? `about ${Math.round(gap)}% more than ${partner} reports shipping` : `about ${Math.round(-gap)}% less than ${partner} reports shipping`;
+  // A single month the other way is noise; "both ways" needs at least two in each direction.
+  const bothWays = Math.min(metrics.flaggedAbove, metrics.flaggedBelow) >= 2;
+  const structural = metrics.flaggedMonths === metrics.monthsWithGap && Math.abs(metrics.medianGap ?? 0) >= 50;
+  const trade = metrics.flaggedMonths === 0
+    ? `U.S. and ${partner} records of ${goods} trade agree closely in every month.`
+    : `In ${metrics.flaggedMonths} of ${metrics.monthsWithGap} months, U.S. and ${partner} records of ${goods} trade disagreed by more than 25%. ` + (bothWays
+      ? `The gaps went both ways: in ${metrics.flaggedAbove} of those months the U.S. recorded more, in ${metrics.flaggedBelow} less. In the latest month (${metrics.latestMonth}) it recorded ${size(metrics.latestGap ?? 0)}.`
+      : `Typically the U.S. recorded ${size(metrics.medianGap ?? 0)}.`);
+  const flaggedCount = metrics.forcedLaborSuppliers ?? 0;
+  const share = metrics.suppliers ? Math.round((flaggedCount / metrics.suppliers) * 100) : 0;
+  const suppliers = metrics.suppliers === null
+    ? "No shipping records are available to check the companies involved."
+    : metrics.suppliers < 10
+      ? `${flaggedCount === metrics.suppliers ? (metrics.suppliers === 2 ? "Both" : "All") : flaggedCount} of the ${metrics.suppliers} companies shipping it carry a forced-labor warning flag. With so few companies, this says little about the trade as a whole.`
+      : `${share >= 50 ? "Most" : share >= 20 ? "Some" : "Few"} of the ${formatCount(metrics.suppliers)} companies shipping it (${share}%) carry a forced-labor warning flag${share >= 20 ? ", often because the product and country are on official watch lists rather than anything a company did" : ""}.`;
+  const policy = metrics.eventsInWindow
+    ? `The government has acted on this product ${metrics.eventsInWindow === 1 ? "once" : `${metrics.eventsInWindow} times`} since ${monthLabel(windowStart)}, most recently: ${metrics.latestEvent!.title}.`
+    : "";
+  const nextStep = type === "Mirror gap"
+    ? structural
+      ? "A gap this large in every month usually means the two countries file the goods under different product codes. Confirm that first."
+      : bothWays
+        ? "Look at the months where the direction changed and what happened then, such as a new duty or a change in shipping route."
+        : "Start by checking whether both countries use the same product code and shipping route, since that explains many gaps."
+    : type === "Supplier risk"
+      ? "Start by asking the largest suppliers for documents showing where materials came from and how workers were treated."
+      : "Watch the next few months of trade data for sudden jumps, drops, or new supplying countries.";
+  return { summary: [trade, suppliers, policy].filter(Boolean).join(" "), nextStep };
 }
 
 export const buildLeads = (months: WindowMonths) => products.map((product) => buildLead(product, months)).filter((lead): lead is Lead => lead !== null).sort((a, b) => b.score - a.score);

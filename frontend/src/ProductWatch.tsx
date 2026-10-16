@@ -4,6 +4,9 @@ import {
   GAP_THRESHOLD, Band, Corridor, Development, Indication, Point, WindowMonths, comtradeGeneratedAt, corridorData, developmentsFor, flagLabels, formatCount, formatDate,
   formatGap, formatShare, fullSeries, indicationLabels, mirrorData, monthLabel, pendingReviewCount, products, reviewBand, riskLabels, sayariGeneratedAt, tavilyGeneratedAt, windowed,
 } from "./data";
+import { ProductAnalysis } from "./Analysis";
+import { HowToRead, Term, bandMeaning } from "./Glossary";
+import { buildLead, shortPartner } from "./data";
 
 const SERIES_COLORS = { reported: "#008574", mirror: "#a8692a" };
 const formatUsd = (value: number | null) => value === null ? "Not reported" : value >= 1e9 ? `$${(value / 1e9).toFixed(2)}B` : `$${(value / 1e6).toFixed(1)}M`;
@@ -27,7 +30,7 @@ function useElementWidth<T extends HTMLElement>() {
 }
 
 function BandPill({ band }: { band: Band }) {
-  return <span className={`severity-pill ${band.toLowerCase()}`}><i />{band}</span>;
+  return <span className={`severity-pill ${band.toLowerCase()}`} title={bandMeaning[band]}><i />{band}</span>;
 }
 
 function GapSparkline({ points }: { points: Point[] }) {
@@ -121,10 +124,15 @@ function CorridorPanel({ data, partner }: { data?: Corridor; partner: string }) 
   </>;
 }
 
+export function ViewSwitch<T extends string>({ view, onChange, labels = { trends: "Trends", analysis: "Analysis" } as Record<string, string> }: { view: T; onChange: (view: T) => void; labels?: Record<string, string> }) {
+  return <div className="view-switch" role="tablist" aria-label="Section view">{(Object.keys(labels) as T[]).map((key) => <button type="button" role="tab" key={key} aria-selected={view === key} className={view === key ? "active" : ""} onClick={() => onChange(key)}>{labels[key]}</button>)}</div>;
+}
+
 export default function ProductWatch({ months, initialProductId, onOpenLead }: { months: WindowMonths; initialProductId?: string; onOpenLead: (productId: string) => void }) {
   const [indication, setIndication] = useState<Indication | "all">("all");
   const [activeId, setActiveId] = useState(initialProductId ?? products[0].id);
   const [hover, setHover] = useState<number | null>(null);
+  const [view, setView] = useState<"trends" | "analysis">("trends");
   const [chartRef, chartWidth] = useElementWidth<HTMLDivElement>();
   const available = products.filter((product) => mirrorData[product.id]);
   const pending = products.filter((product) => !mirrorData[product.id]);
@@ -157,6 +165,9 @@ export default function ProductWatch({ months, initialProductId, onOpenLead }: {
 
   return <section className="tab-page product-watch">
     <div className="section-title-row"><div><p className="eyebrow">02 <span>/</span> PRODUCT WATCH</p><h2>Products with a history of trade anomalies</h2></div><span className="data-chip">UN COMTRADE · MIRROR STATISTICS</span></div>
+    <ViewSwitch view={view} onChange={setView} />
+    {view === "analysis" ? <ProductAnalysis months={months} onOpenLead={onOpenLead} onOpenTrend={(productId) => { setIndication("all"); setActiveId(productId); setHover(null); setView("trends"); requestAnimationFrame(() => document.querySelector(".product-detail")?.scrollIntoView({ behavior: "smooth", block: "start" })); }} /> : <>
+    <HowToRead><p>Each card is a product with a history of trade problems, paired with the country that ships the most of it to the U.S. The line chart compares what the U.S. says it imported with what that country says it exported. They should roughly match; red triangles mark months where they differed by more than 25% (<Term k="flagged month">flagged months</Term>). Gold diamonds mark government actions. Below the charts, <b>Corridor intelligence</b> shows who ships the product and recent rulings. <b>Analysis</b> at the top has ratings and suggested next checks.</p></HowToRead>
     <div className="coverage-note"><History size={19} /><div><b>Why these products are on watch</b><p>Each product is listed because of public enforcement or guidance: forced-labor import rules, duty-evasion and transshipment cases, money-laundering typologies, or conflict and illegal-harvest sourcing rules. Trends are real UN Comtrade statistics comparing what the United States reports importing from its largest supplier of each product with what that supplier reports exporting to the United States. A gap is a prompt to reconcile, not evidence of wrongdoing by any country or company.</p></div></div>
     <div className="indication-filter" role="group" aria-label="Filter products by risk indication">
       <button type="button" aria-pressed={indication === "all"} onClick={() => setIndication("all")}>All indications <i>{available.length}</i></button>
@@ -176,6 +187,7 @@ export default function ProductWatch({ months, initialProductId, onOpenLead }: {
 
     <article className="product-detail visual-card">
       <div className="visual-card-head"><div><p className="eyebrow">TREND DETAIL <span>/</span> {active.hs} <span>/</span> U.S. ↔ {series.partner.name.toUpperCase()} <span>/</span> {points[0].month.toUpperCase()} – {points[points.length - 1].month.toUpperCase()}</p><h2>{active.name}</h2></div><BandPill band={reviewBand(points)} /></div>
+      {(() => { const lead = buildLead(active, months); return lead && <section className="plain-box"><h3>In plain terms <small>{bandMeaning[lead.severity]} · review score {lead.score}</small></h3><p>{lead.plain.summary}</p><p className="plain-next"><b>Suggested first step:</b> {lead.plain.nextStep}</p></section>; })()}
       <div className="product-stats">
         <div><span className="metric-label">MONTHS FLAGGED</span><strong>{flaggedCount}<small>/{points.length}</small></strong><small>Gap beyond ±{GAP_THRESHOLD}%</small></div>
         <div><span className="metric-label">LARGEST GAP</span><strong>{formatGap(peak?.gap ?? null)}</strong><small>{peak?.month}</small></div>
@@ -195,7 +207,7 @@ export default function ProductWatch({ months, initialProductId, onOpenLead }: {
               {eventsAt(hover!).map((item) => <span key={item.url + item.title} className="tooltip-event"><i />{item.title}</span>)}
             </div>}
           </div>
-          <h3 className="gap-title">Mirror gap by month <small>(U.S. imports ÷ partner exports − 1 · dashed lines = ±{GAP_THRESHOLD}% review threshold)</small></h3>
+          <h3 className="gap-title"><Term k="mirror gap">Mirror gap</Term> by month <small>(U.S. imports ÷ partner exports − 1 · dashed lines = ±{GAP_THRESHOLD}% review threshold)</small></h3>
           <GapChart points={points} hover={hover} onHover={setHover} width={chartWidth} eventIndexes={eventIndexes} />
           {points.some((point) => point.gap !== null && Math.abs(point.gap) > 200) && <p className="gap-cap-note">Bars are capped at the axis limit; hover a month or open the table for exact gaps.{medianGap > 100 && ` A gap this large in most months usually means the two sides classify the goods differently or attribute them to different partners (for example, goods shipped through a third country’s port), so check classification and routing before reading it as an anomaly.`}</p>}
           {afterData.length > 0 && <p className="after-data-note"><Newspaper size={12} /> {afterData.length} development{afterData.length > 1 ? "s" : ""} after {monthLabel(lastPeriod)} {afterData.length > 1 ? "are" : "is"} not yet reflected in trade data. Watch the next monthly releases for import surges or partner shifts.</p>}
@@ -221,11 +233,13 @@ export default function ProductWatch({ months, initialProductId, onOpenLead }: {
       <div className="intel-grid">
         <section className="intel-panel">
           <p className="intel-source"><Network size={13} /> Sayari trade records <span>· aggregate, no entities named</span></p>
+          {(() => { const data = corridorData[active.id]; return data && data.suppliers > 0 && <p className="plain-line">In short: Sayari has {formatCount(data.shipments)} shipping records from {formatCount(data.suppliers)} companies sending this product from {shortPartner(series.partner.name)} to the U.S. {formatShare(data.supplierRisk?.forced_labor ?? 0, data.suppliers)} of those companies carry a forced-labor <Term k="risk flag">warning flag</Term>.</p>; })()}
           <CorridorPanel data={corridorData[active.id]} partner={series.partner.name} />
           <p className="intel-caveat">Counts come from bills of lading and customs records in Sayari’s graph, so they cover what those sources capture, not all trade. A risk flag is an attribute of the supplier entity: it can reflect sub-tier links, a country-and-product listing such as the U.S. Labor Department lists, or activity in other products. It is a reason to ask for documentation, not a finding about these shipments.</p>
         </section>
         <section className="intel-panel">
           <p className="intel-source"><Newspaper size={13} /> Recent developments <span>· Tavily web search</span></p>
+          {developments.length > 0 && <p className="plain-line">In short: {developments.length} government action{developments.length > 1 ? "s" : ""} or ruling{developments.length > 1 ? "s" : ""} on this product, newest first. “Show on chart” marks when each happened.</p>}
           {developments.length ? <ol className="development-list">{developments.map((item) => { const index = hoverIndexFor(item.date!);
             return <li key={item.url + item.title}>
               <span className="development-meta"><time dateTime={item.date!}>{formatDate(item.date!)}</time><i>{item.kind}</i>{index >= 0 ? <button type="button" className="show-on-chart" onClick={() => { setHover(index); document.querySelector(".product-charts")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>Show on chart</button> : item.date!.slice(0, 7) > lastPeriod ? <em>After latest trade data</em> : <em>Before selected period</em>}</span>
@@ -239,5 +253,6 @@ export default function ProductWatch({ months, initialProductId, onOpenLead }: {
       </div>
       <p className="data-provenance"><Database size={12} /> Sources: Sayari Graph trade facets, retrieved {formatDate(sayariGeneratedAt)}; Tavily web search, retrieved {formatDate(tavilyGeneratedAt)}. Refresh with npm run data:sayari and npm run data:tavily.</p>
     </article>
+    </>}
   </section>;
 }
